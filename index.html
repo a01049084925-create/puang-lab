@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>우세손 vs 비우세손 신경 제어 실험</title>
+  <title>푸앙이 뇌과학 연구소 | 우세손 vs 비우세손 신경 제어 실험</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas CDN (세로형 진단 카드 PNG 저장용) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <!-- Pretendard & Inter 폰트 로드 -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <script>
     tailwind.config = {
@@ -19,8 +21,11 @@
             sans: ['Pretendard', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
           },
           colors: {
-            labBg: '#f8fafc',
-            labAccent: '#4f46e5',
+            cauBlue: '#004C97',
+            cauAccent: '#1E56A0',
+            puangSky: '#79CBF2',
+            cauSky: '#EBF5FF',
+            cauSkyMid: '#DBEAFE',
             congruent: '#2563eb',
             incongruent: '#dc2626',
             goGreen: '#10b981',
@@ -31,19 +36,49 @@
   </script>
 
   <style>
-    /* 기본 배경 및 타이포그래피 보정 */
+    /* 기본 배경: 중앙대 푸앙이 연구소 노트 모눈종이 패턴 */
     body {
-      background-color: #f8fafc;
+      background-color: #f0f8ff;
+      background-image:
+        linear-gradient(to right, rgba(0, 76, 151, 0.055) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 76, 151, 0.055) 1px, transparent 1px);
+      background-size: 28px 28px;
       color: #0f172a;
       font-family: 'Pretendard', 'Inter', sans-serif;
       user-select: none;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 포커스 모드: 본 실험(1·2단계 실행) 중 시선 분산을 막아 자극 집중도 극대화 */
+    body.focus-mode {
+      background-color: #f8fafc;
+      background-image: none;
+    }
+    body.focus-mode #main-header {
+      opacity: 0.45;
+      transition: opacity 0.25s ease;
+    }
+    body.focus-mode #main-header:hover {
+      opacity: 1;
+    }
+    body.focus-mode #main-footer {
+      opacity: 0.3;
+    }
+
+    /* 세로형 진단 카드 전용 스테이지 모드 */
+    main.card-stage-mode {
+      background: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      backdrop-filter: none !important;
     }
 
     /* 화면 전환 애니메이션 */
     .screen {
       display: none;
-      animation: fadeSlideUp 0.25s ease-out forwards;
+      animation: fadeSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
     .screen.active {
       display: block;
@@ -60,41 +95,43 @@
       }
     }
 
-    /* 키캡 3D 스타일 */
+    /* 키캡 3D 스타일 & 타건 글로우 피드백 */
     .keycap {
-      transition: all 0.08s ease;
-      box-shadow: 0 4px 0 #cbd5e1;
+      transition: transform 0.07s ease, box-shadow 0.07s ease, background-color 0.1s ease, border-color 0.1s ease;
+      box-shadow: 0 5px 0 #bdd5ec, 0 7px 14px rgba(0, 76, 151, 0.07);
     }
     .keycap.pressed {
-      transform: translateY(3px);
+      transform: translateY(4px);
       box-shadow: 0 1px 0 #94a3b8;
     }
     .keycap.correct-flash {
       background-color: #ecfdf5 !important;
       border-color: #10b981 !important;
       color: #047857 !important;
-      box-shadow: 0 1px 0 #10b981 !important;
-      transform: translateY(3px);
+      box-shadow: 0 1px 0 #10b981, 0 0 18px rgba(16, 185, 129, 0.48) !important;
+      transform: translateY(4px);
     }
     .keycap.wrong-flash {
       background-color: #fef2f2 !important;
       border-color: #dc2626 !important;
       color: #b91c1c !important;
-      box-shadow: 0 1px 0 #dc2626 !important;
-      transform: translateY(3px);
+      box-shadow: 0 1px 0 #dc2626, 0 0 18px rgba(220, 38, 38, 0.45) !important;
+      transform: translateY(4px);
     }
 
     /* 자극 박스 피드백 테두리 */
     .stimulus-box {
-      transition: border-color 0.1s ease, background-color 0.1s ease, transform 0.1s ease;
+      transition: border-color 0.1s ease, background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
     }
     .stimulus-box.feedback-correct {
       border-color: #10b981 !important;
       background-color: #ecfdf5 !important;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16);
     }
     .stimulus-box.feedback-wrong {
       border-color: #dc2626 !important;
       background-color: #fef2f2 !important;
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
       animation: shake 0.18s ease-in-out;
     }
 
@@ -104,76 +141,162 @@
       75% { transform: translateX(6px); }
     }
 
-    /* 반응 원형 버튼 펄스 */
+    /* 푸앙이 생동감 애니메이션 */
+    @keyframes puangFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .puang-float {
+      animation: puangFloat 2.8s ease-in-out infinite;
+    }
+
+    @keyframes puangJump {
+      0% { transform: translateY(0) scale(1); }
+      42% { transform: translateY(-10px) scale(1.07); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    .puang-jump {
+      animation: puangJump 0.22s ease-out;
+    }
+
+    @keyframes puangWiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-6deg); }
+      75% { transform: rotate(6deg); }
+    }
+    .puang-wiggle {
+      animation: puangWiggle 0.2s ease-in-out;
+    }
+
+    @keyframes comboPop {
+      0% { transform: scale(0.85); }
+      50% { transform: scale(1.16); }
+      100% { transform: scale(1); }
+    }
+    .combo-pop {
+      animation: comboPop 0.22s ease-out;
+    }
+
+    /* 1단계 반응 원형 버튼 펄스 */
     .pulse-go {
       box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
       animation: pulseGreen 1.2s infinite;
     }
     @keyframes pulseGreen {
       0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
-      70% { box-shadow: 0 0 0 22px rgba(16, 185, 129, 0); }
+      70% { box-shadow: 0 0 0 24px rgba(16, 185, 129, 0); }
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    /* CSS 바 차트 전환 */
+    /* CSS 바 차트 및 밸런스 미터 전환 */
     .bar-fill {
-      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* 휴식 원형 프로그레스 링 */
+    .break-ring-progress {
+      transition: stroke-dashoffset 0.9s linear;
+    }
+
+    /* 중앙대 투명 학생증 감성 세로형 진단 카드 */
+    .cau-translucent-card {
+      background: linear-gradient(158deg, #ffffff 0%, #f1f9ff 38%, #dff1ff 76%, #cce8ff 100%);
+      box-shadow:
+        0 20px 45px -12px rgba(0, 76, 151, 0.22),
+        0 6px 16px -4px rgba(121, 203, 242, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .cau-card-sheen {
+      background: linear-gradient(125deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.14) 36%, rgba(255, 255, 255, 0) 54%, rgba(255, 255, 255, 0.28) 100%);
+    }
+    .cau-hero-window {
+      background: linear-gradient(180deg, #b8e7fc 0%, #ddf4ff 62%, #f4fbff 100%);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
 
   <!-- 상단 Lab 헤더 -->
-  <header class="w-full max-w-4xl mb-4 flex items-center justify-between px-1">
-    <div class="flex items-center gap-2.5">
-      <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-sm">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-        </svg>
-      </div>
+  <header id="main-header" class="w-full max-w-4xl mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
+    <div class="flex items-center gap-3">
+      <!-- 귀여운 푸앙이 미니 연구원 아바타 -->
+      <div id="header-puang-avatar" class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EBF5FF] to-[#CBEAFF] border-2 border-[#004C97]/20 flex items-center justify-center shadow-sm overflow-hidden shrink-0"></div>
       <div>
-        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Cognitive Motor Lab</p>
-        <h1 class="text-sm sm:text-base font-bold text-slate-800">우세손 vs 비우세손 신경 제어 실험</h1>
+        <div class="flex items-center gap-1.5">
+          <span class="px-1.5 py-0.5 rounded bg-[#004C97] text-white text-[10px] font-extrabold tracking-wider uppercase">PUANG NEURO LAB</span>
+          <span class="text-[11px] font-bold text-[#1E56A0] hidden sm:inline">CAU Cognitive Motor Lab</span>
+        </div>
+        <h1 class="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight mt-0.5">
+          푸앙이 뇌과학 연구소: 우세손 vs 비우세손 실험
+        </h1>
       </div>
     </div>
-    <span id="header-badge" class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-200/80 text-slate-700">
-      한/영 키보드 상태 무관 작동
-    </span>
+
+    <div class="flex items-center gap-2">
+      <span id="header-badge" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/95 border border-[#004C97]/15 text-[#004C97] shadow-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        한/영 무관 작동
+      </span>
+      <!-- 모든 푸앙이 캐릭터 모아보기 도감 버튼 -->
+      <button
+        id="btn-open-gallery"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold bg-[#EBF5FF] border border-[#004C97]/25 text-[#004C97] hover:bg-[#DBEAFE] active:scale-95 transition shadow-sm cursor-pointer"
+        aria-label="푸앙이 캐릭터 도감 열기"
+      >
+        <span>🎨</span>
+        <span>푸앙이 도감</span>
+      </button>
+      <!-- 효과음 ON/OFF 토글 -->
+      <button
+        id="btn-sound-toggle"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-[#004C97]/20 text-[#004C97] hover:bg-[#EBF5FF] active:scale-95 transition shadow-sm cursor-pointer"
+        aria-label="효과음 켜기 또는 끄기"
+      >
+        <span id="sound-icon">🔊</span>
+        <span id="sound-label">효과음 ON</span>
+      </button>
+    </div>
   </header>
 
   <!-- 메인 컨테이너 -->
-  <main class="w-full max-w-4xl bg-white rounded-3xl shadow-sm border border-slate-200/90 p-6 sm:p-10">
+  <main id="main-container" class="w-full max-w-4xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-md shadow-[#004C97]/5 border border-[#004C97]/12 p-6 sm:p-10 relative transition-all duration-300">
 
     <!-- ========================================================= -->
     <!-- SCREEN 1: 시작 및 설정 화면 -->
     <!-- ========================================================= -->
     <section id="screen-start" class="screen active">
-      <div class="text-center mb-8">
-        <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-3">
-          단순 운동 vs 화살표·스트룹(Arrow-Stroop) 과제
-        </span>
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
-          손의 차이일까, 뇌와 신경의 차이일까?
-        </h2>
-        <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          양손으로 <strong>1단계(단순 반응)</strong>와 <strong>2단계(화살표·스트룹 인지 협응)</strong>를 각각 측정합니다.
-          인지 부하가 추가될 때 양손의 반응속도, 일관성, 손가락별 오류 패턴이 어떻게 달라지는지 정밀하게 분석합니다.
-        </p>
+      <div class="flex flex-col md:flex-row items-center justify-center gap-5 md:gap-7 mb-8 text-center md:text-left">
+        <!-- 하얀 연구실 가운 입은 치비 푸앙이 연구원 히어로 -->
+        <div id="start-puang-hero" class="puang-float w-36 h-40 sm:w-40 sm:h-44 rounded-3xl bg-gradient-to-b from-[#D5F1FF] via-[#EDF8FF] to-white border-2 border-[#79CBF2]/55 shadow-sm flex items-center justify-center shrink-0"></div>
+        <div>
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF5FF] text-[#004C97] border border-[#004C97]/15 text-xs font-extrabold mb-2.5">
+            🥼 푸앙이와 함께하는 양손 반응속도 테스트
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2.5">
+            손의 차이일까, 뇌와 신경의 차이일까?
+          </h2>
+          <p class="text-sm sm:text-base text-slate-600 max-w-xl leading-relaxed">
+            오른손과 왼손으로 <strong>초록불 빨리 누르기(1단계)</strong>랑 <strong>화살표 방향 맞추기(2단계)</strong>를 한 번씩 해볼 거예요.
+            다 끝나면 나만의 <strong>푸앙이 결과 카드</strong>랑 <strong>양손 상세 분석</strong>을 바로 확인해 볼 수 있어요!
+          </p>
+        </div>
       </div>
 
       <!-- 입력 폼 카드 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
         <!-- 참가자 ID -->
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
-          <label for="input-participant-id" class="block text-sm font-bold text-slate-700 mb-2">
+        <div class="bg-[#F6FAFF] p-4 rounded-2xl border border-[#004C97]/12">
+          <label for="input-participant-id" class="block text-sm font-bold text-slate-800 mb-2">
             참가자 ID 또는 닉네임 <span class="text-red-500">*</span>
           </label>
           <input
             id="input-participant-id"
             type="text"
             maxlength="30"
-            placeholder="예: P01 또는 홍길동"
-            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            placeholder="예: 김푸앙 또는 P01"
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#004C97] focus:border-[#004C97] transition"
           />
           <p id="id-error-msg" class="hidden text-xs text-red-600 font-semibold mt-1.5">
             참가자 ID 또는 닉네임을 입력해 주세요.
@@ -181,18 +304,18 @@
         </div>
 
         <!-- 평소 우세손 -->
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
-          <span class="block text-sm font-bold text-slate-700 mb-2">평소 주로 쓰는 손 (우세손)</span>
+        <div class="bg-[#F6FAFF] p-4 rounded-2xl border border-[#004C97]/12">
+          <span class="block text-sm font-bold text-slate-800 mb-2">평소 주로 쓰는 손 (우세손)</span>
           <div class="grid grid-cols-2 gap-2.5">
             <label class="cursor-pointer">
               <input type="radio" name="dominantHand" value="right" checked class="peer sr-only" />
-              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-bold text-sm peer-checked:border-[#004C97] peer-checked:bg-[#EBF5FF] peer-checked:text-[#004C97] transition">
                 오른손잡이
               </div>
             </label>
             <label class="cursor-pointer">
               <input type="radio" name="dominantHand" value="left" class="peer sr-only" />
-              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-bold text-sm peer-checked:border-[#004C97] peer-checked:bg-[#EBF5FF] peer-checked:text-[#004C97] transition">
                 왼손잡이
               </div>
             </label>
@@ -200,9 +323,9 @@
         </div>
 
         <!-- 측정 순서 선택 -->
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
-          <label for="select-order" class="block text-sm font-bold text-slate-700 mb-2">측정 순서 (순서 효과 통제)</label>
-          <select id="select-order" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <div class="bg-[#F6FAFF] p-4 rounded-2xl border border-[#004C97]/12">
+          <label for="select-order" class="block text-sm font-bold text-slate-800 mb-2">측정 순서 (순서 효과 통제)</label>
+          <select id="select-order" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#004C97]">
             <option value="random" selected>자동 무작위 배정 (권장 · 역균형화)</option>
             <option value="dominant_first">우세손 먼저 측정</option>
             <option value="nondominant_first">비우세손 먼저 측정</option>
@@ -210,72 +333,77 @@
         </div>
 
         <!-- 실험 모드 선택 -->
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
-          <label for="select-mode" class="block text-sm font-bold text-slate-700 mb-2">실험 모드</label>
-          <select id="select-mode" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <div class="bg-[#F6FAFF] p-4 rounded-2xl border border-[#004C97]/12">
+          <label for="select-mode" class="block text-sm font-bold text-slate-800 mb-2">실험 모드</label>
+          <select id="select-mode" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#004C97]">
             <option value="full" selected>실전 실험 모드 (1단계 10회 · 2단계 32회)</option>
             <option value="demo">빠른 시연 모드 (1단계 5회 · 2단계 12회)</option>
           </select>
         </div>
       </div>
 
-      <!-- 키보드 매핑 미리보기 -->
-      <div class="bg-slate-50/80 rounded-2xl border border-slate-200 p-5 mb-7">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold text-slate-800">키보드 대칭 손가락 배치 안내</h3>
-          <span class="text-xs text-slate-500">데스크톱 / 노트북 키보드 사용 권장</span>
+      <!-- 키보드 매핑 미리보기 + 양손 실루엣 가이드 -->
+      <div class="bg-[#F6FAFF] rounded-2xl border border-[#004C97]/15 p-5 mb-7">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <h3 class="text-sm font-extrabold text-[#004C97] flex items-center gap-1.5">
+            <span>🖐️</span> 키보드 대칭 손가락 배치 안내
+          </h3>
+          <span class="text-xs font-medium text-slate-500">데스크톱 / 노트북 키보드 사용 권장</span>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- 왼손 미리보기 -->
-          <div class="bg-white rounded-xl p-4 border border-slate-200">
-            <p class="text-xs font-bold text-indigo-600 mb-3 text-center">왼손 (Left Hand)</p>
+          <div class="bg-white rounded-2xl p-4 border border-[#004C97]/12 shadow-sm">
+            <p class="text-xs font-extrabold text-[#004C97] mb-1 text-center">왼손 (Left Hand)</p>
+            <div id="start-left-hand-svg" class="flex justify-center mb-1"></div>
             <div class="grid grid-cols-4 gap-2 text-center">
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">A</div>
-                <div class="text-sm font-bold text-indigo-600">←</div>
-                <div class="text-[11px] font-medium text-slate-500">새끼</div>
+                <div class="text-sm font-black text-[#1E56A0]">←</div>
+                <div class="text-[11px] font-semibold text-slate-500">새끼</div>
               </div>
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">S</div>
-                <div class="text-sm font-bold text-indigo-600">↓</div>
-                <div class="text-[11px] font-medium text-slate-500">약지</div>
+                <div class="text-sm font-black text-[#1E56A0]">↓</div>
+                <div class="text-[11px] font-semibold text-slate-500">약지</div>
               </div>
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">D</div>
-                <div class="text-sm font-bold text-indigo-600">↑</div>
-                <div class="text-[11px] font-medium text-slate-500">중지</div>
+                <div class="text-sm font-black text-[#1E56A0]">↑</div>
+                <div class="text-[11px] font-semibold text-slate-500">중지</div>
               </div>
-              <div class="keycap bg-indigo-50/60 border border-indigo-300 rounded-xl py-2 px-1">
-                <div class="text-base font-extrabold text-indigo-800">F</div>
-                <div class="text-sm font-bold text-indigo-600">→</div>
-                <div class="text-[11px] font-bold text-indigo-600">검지(1단계)</div>
+              <div class="keycap bg-[#EBF5FF] border-2 border-[#004C97]/60 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-[#004C97]">F</div>
+                <div class="text-sm font-black text-[#004C97]">→</div>
+                <div class="text-[10px] font-extrabold text-[#004C97]">검지(1단계)</div>
               </div>
             </div>
           </div>
 
           <!-- 오른손 미리보기 -->
-          <div class="bg-white rounded-xl p-4 border border-slate-200">
-            <p class="text-xs font-bold text-indigo-600 mb-3 text-center">오른손 (Right Hand)</p>
+          <div class="bg-white rounded-2xl p-4 border border-[#004C97]/12 shadow-sm">
+            <p class="text-xs font-extrabold text-[#004C97] mb-1 text-center">오른손 (Right Hand)</p>
+            <div id="start-right-hand-svg" class="flex justify-center mb-1"></div>
             <div class="grid grid-cols-4 gap-2 text-center">
-              <div class="keycap bg-indigo-50/60 border border-indigo-300 rounded-xl py-2 px-1">
-                <div class="text-base font-extrabold text-indigo-800">J</div>
-                <div class="text-sm font-bold text-indigo-600">←</div>
-                <div class="text-[11px] font-bold text-indigo-600">검지(1단계)</div>
+              <div class="keycap bg-[#EBF5FF] border-2 border-[#004C97]/60 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-[#004C97]">J</div>
+                <div class="text-sm font-black text-[#004C97]">←</div>
+                <div class="text-[10px] font-extrabold text-[#004C97]">검지(1단계)</div>
               </div>
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">K</div>
-                <div class="text-sm font-bold text-indigo-600">↓</div>
-                <div class="text-[11px] font-medium text-slate-500">중지</div>
+                <div class="text-sm font-black text-[#1E56A0]">↓</div>
+                <div class="text-[11px] font-semibold text-slate-500">중지</div>
               </div>
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">L</div>
-                <div class="text-sm font-bold text-indigo-600">↑</div>
-                <div class="text-[11px] font-medium text-slate-500">약지</div>
+                <div class="text-sm font-black text-[#1E56A0]">↑</div>
+                <div class="text-[11px] font-semibold text-slate-500">약지</div>
               </div>
               <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
                 <div class="text-base font-extrabold text-slate-800">;</div>
-                <div class="text-sm font-bold text-indigo-600">→</div>
-                <div class="text-[11px] font-medium text-slate-500">새끼</div>
+                <div class="text-sm font-black text-[#1E56A0]">→</div>
+                <div class="text-[11px] font-semibold text-slate-500">새끼</div>
               </div>
             </div>
           </div>
@@ -284,9 +412,10 @@
 
       <button
         id="btn-start-experiment"
-        class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+        class="w-full py-4 rounded-2xl bg-gradient-to-r from-[#004C97] to-[#1E56A0] hover:from-[#003E7D] hover:to-[#174685] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#004C97]/25 transition cursor-pointer flex items-center justify-center gap-2"
       >
-        실험 시작하기
+        <span>푸앙이 연구원과 뇌 테스트 시작하기</span>
+        <span class="text-lg">🔬</span>
       </button>
     </section>
 
@@ -294,29 +423,32 @@
     <!-- SCREEN 2: 1단계 안내 (손 브리핑) -->
     <!-- ========================================================= -->
     <section id="screen-s1-brief" class="screen text-center">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-sm mb-4">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF5FF] text-[#004C97] border border-[#004C97]/15 font-extrabold text-sm mb-4">
         <span id="s1-brief-round-badge">1차 측정</span>
         <span>·</span>
         <span id="s1-brief-hand-badge">오른손 (우세손)</span>
       </div>
 
+      <div id="s1-brief-puang" class="flex justify-center mb-3"></div>
+
       <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
         1단계: 단순 반응속도 테스트
       </h2>
-      <p class="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
-        가운데 원이 <strong class="text-emerald-600">초록색</strong>으로 바뀌는 순간,<br />
-        <strong id="s1-brief-hand-text" class="text-indigo-700">오른손 검지</strong>로 지정된 키 하나만 최대한 빠르게 눌러주세요.
+      <p class="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-7 leading-relaxed">
+        졸고 있는 푸앙이가 눈을 번쩍 뜨며 원이 <strong class="text-emerald-600">초록색</strong>으로 바뀌는 순간,<br />
+        <strong id="s1-brief-hand-text" class="text-[#004C97]">오른손 검지</strong>로 지정된 키 하나만 최대한 빠르게 눌러주세요!
       </p>
 
-      <!-- 1단계 키 강조 카드 -->
-      <div class="max-w-md mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8">
-        <p class="text-xs font-semibold text-slate-500 mb-3">사용할 손가락과 키</p>
+      <!-- 1단계 키 강조 + 손 실루엣 카드 -->
+      <div class="max-w-md mx-auto bg-[#F6FAFF] border border-[#004C97]/15 rounded-2xl p-6 mb-8">
+        <p class="text-xs font-bold text-[#1E56A0] mb-3">사용할 손가락과 키 (검지 집중!)</p>
+        <div id="s1-brief-hand-svg" class="flex justify-center mb-3"></div>
         <div class="flex items-center justify-center gap-4">
-          <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-600 keycap flex flex-col items-center justify-center">
-            <span id="s1-brief-key" class="text-2xl font-extrabold text-indigo-700">J</span>
+          <div class="w-16 h-16 rounded-2xl bg-white border-2 border-[#004C97] keycap flex flex-col items-center justify-center shrink-0">
+            <span id="s1-brief-key" class="text-2xl font-extrabold text-[#004C97]">J</span>
           </div>
           <div class="text-left">
-            <p id="s1-brief-key-desc" class="text-base font-bold text-slate-800">오른손 검지 (J 키)</p>
+            <p id="s1-brief-key-desc" class="text-base font-extrabold text-slate-800">오른손 검지 (J 키)</p>
             <p class="text-xs text-slate-500 mt-0.5">초록색이 뜨기 전에 누르면 부정출발 처리됩니다.</p>
           </div>
         </div>
@@ -324,9 +456,9 @@
 
       <button
         id="btn-begin-s1"
-        class="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+        class="px-8 py-4 rounded-2xl bg-[#004C97] hover:bg-[#003E7D] text-white font-extrabold text-base shadow-md shadow-[#004C97]/25 transition cursor-pointer"
       >
-        1단계 시작하기 <span class="text-indigo-200 text-sm ml-1">(Space)</span>
+        1단계 시작하기 <span class="text-sky-200 text-sm ml-1">(Space)</span>
       </button>
     </section>
 
@@ -335,30 +467,31 @@
     <!-- ========================================================= -->
     <section id="screen-s1-task" class="screen text-center">
       <div class="flex items-center justify-between mb-3">
-        <span id="s1-task-hand-label" class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+        <span id="s1-task-hand-label" class="px-3.5 py-1 rounded-full bg-[#EBF5FF] text-[#004C97] text-xs font-extrabold">
           오른손 (우세손) · 1단계
         </span>
-        <span id="s1-progress-text" class="text-sm font-bold text-slate-600">1 / 10</span>
+        <span id="s1-progress-text" class="text-sm font-extrabold text-slate-600 tabular-nums">1 / 10</span>
       </div>
       <!-- 진행 바 -->
-      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-8">
-        <div id="s1-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: 0%;"></div>
+      <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-8">
+        <div id="s1-progress-bar" class="h-full bg-gradient-to-r from-[#004C97] to-[#79CBF2] rounded-full transition-all duration-300" style="width: 0%;"></div>
       </div>
 
-      <!-- 중앙 반응 원 -->
-      <div class="flex flex-col items-center justify-center py-6">
+      <!-- 중앙 반응 원 (푸앙이 상태 연동) -->
+      <div class="flex flex-col items-center justify-center py-4">
         <div
           id="s1-circle"
-          class="w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-slate-200 text-slate-600 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner"
+          class="w-60 h-60 sm:w-64 sm:h-64 rounded-full bg-[#EBF5FF] border-4 border-[#BFDBFE] text-slate-700 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner"
         >
-          <span id="s1-circle-main" class="text-2xl sm:text-3xl font-extrabold tracking-tight">기다리세요...</span>
-          <span id="s1-circle-sub" class="text-xs sm:text-sm font-semibold mt-2 opacity-80">초록색이 되면 누르세요</span>
+          <div id="s1-circle-puang" class="mb-1 flex items-center justify-center"></div>
+          <span id="s1-circle-main" class="text-2xl sm:text-3xl font-extrabold tracking-tight">기다리세요... 💤</span>
+          <span id="s1-circle-sub" class="text-xs sm:text-sm font-bold mt-1.5 opacity-80">초록색이 되면 누르세요</span>
         </div>
 
         <!-- 경고 / 피드백 영역 -->
         <div class="h-10 mt-6 flex items-center justify-center">
           <p id="s1-feedback-msg" class="text-sm font-bold text-slate-500">
-            지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-extrabold">J</span> (검지)
+            지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-[#EBF5FF] text-[#004C97] font-extrabold">J</span> (검지)
           </p>
         </div>
       </div>
@@ -368,49 +501,49 @@
     <!-- SCREEN 4: 2단계 안내 및 4회 연습 라운드 -->
     <!-- ========================================================= -->
     <section id="screen-s2-intro" class="screen text-center">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-sm mb-3">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EBF5FF] text-[#004C97] border border-[#004C97]/15 font-extrabold text-sm mb-3">
         <span id="s2-intro-hand-badge">오른손 (우세손)</span>
         <span>·</span>
         <span>2단계 안내 및 연습</span>
       </div>
 
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2.5">
         2단계: 화살표·스트룹 과제
       </h2>
       <p class="text-slate-600 text-sm sm:text-base mb-5">
-        화면의 <strong>화살표 색깔</strong>에 따라 아래 규칙대로 알맞은 손가락 키를 누르세요.
+        화살표 색깔에 따라 <strong>순둥이 푸앙</strong>과 <strong>청개구리 푸앙</strong>의 규칙대로 키를 누르세요!
       </p>
 
-      <!-- 규칙 배너 2개 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-6">
-        <div class="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-200 text-left">
-          <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-extrabold shrink-0">→</div>
+      <!-- 규칙 배너 2개 (순둥이 연구원 푸앙 vs 청개구리 연구원 푸앙) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-w-2xl mx-auto mb-6">
+        <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-blue-50/90 border-2 border-blue-200 text-left shadow-sm">
+          <div id="rule-pure-puang" class="w-[74px] h-[76px] rounded-2xl bg-white border border-blue-200 flex items-center justify-center shrink-0 overflow-hidden"></div>
           <div>
-            <p class="text-sm font-extrabold text-blue-800">🔵 파란색 화살표 (일치)</p>
-            <p class="text-xs text-blue-700 mt-0.5">화살표가 가리키는 <strong>방향 그대로</strong> 누르기</p>
+            <p class="text-sm font-extrabold text-blue-800">🔵 순둥이 푸앙 (파랑 · 일치)</p>
+            <p class="text-xs text-blue-700 font-semibold mt-0.5">"보이는 방향 <strong>그대로</strong> 눌러!"</p>
           </div>
         </div>
-        <div class="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-left">
-          <div class="w-11 h-11 rounded-xl bg-red-600 text-white flex items-center justify-center text-xl font-extrabold shrink-0">→</div>
+        <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-red-50/90 border-2 border-red-200 text-left shadow-sm">
+          <div id="rule-rebel-puang" class="w-[74px] h-[76px] rounded-2xl bg-white border border-red-200 flex items-center justify-center shrink-0 overflow-hidden"></div>
           <div>
-            <p class="text-sm font-extrabold text-red-800">🔴 빨간색 화살표 (불일치)</p>
-            <p class="text-xs text-red-700 mt-0.5">화살표의 <strong>정반대 방향</strong> 누르기 (←↔→, ↑↔↓)</p>
+            <p class="text-sm font-extrabold text-red-800">🔴 청개구리 푸앙 (빨강 · 불일치)</p>
+            <p class="text-xs text-red-700 font-semibold mt-0.5">"내 말은 <strong>거꾸로</strong> 들어! (←↔→, ↑↔↓)"</p>
           </div>
         </div>
       </div>
 
       <!-- 연습 라운드 영역 -->
-      <div id="practice-container" class="max-w-xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+      <div id="practice-container" class="max-w-xl mx-auto bg-[#F6FAFF] border border-[#004C97]/15 rounded-2xl p-5 mb-5">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-slate-600">비기록 연습 라운드 (4회)</span>
-          <span id="practice-progress" class="text-xs font-bold text-indigo-600">준비 중</span>
+          <span class="text-xs font-extrabold text-[#004C97]">비기록 연습 라운드 (4회)</span>
+          <span id="practice-progress" class="text-xs font-extrabold text-[#1E56A0]">준비 중 (0 / 4)</span>
         </div>
 
         <!-- 연습 자극 박스 -->
         <div id="practice-stimulus-box" class="stimulus-box h-32 rounded-2xl bg-white border-2 border-slate-200 flex flex-col items-center justify-center mb-3">
           <button
             id="btn-start-practice"
-            class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-sm transition cursor-pointer"
+            class="px-6 py-2.5 rounded-xl bg-[#004C97] hover:bg-[#003E7D] text-white text-sm font-extrabold shadow-sm transition cursor-pointer"
           >
             4회 연습 시작하기 (Space)
           </button>
@@ -422,13 +555,16 @@
         </p>
       </div>
 
-      <!-- 활성 손 4키 슬롯 (연습용) -->
-      <div id="s2-intro-keyslots" class="grid grid-cols-4 gap-2.5 max-w-md mx-auto mb-6"></div>
+      <!-- 활성 손 실루엣 + 4키 슬롯 (연습용) -->
+      <div class="max-w-md mx-auto mb-6">
+        <div id="s2-intro-hand-svg" class="flex justify-center mb-1"></div>
+        <div id="s2-intro-keyslots" class="grid grid-cols-4 gap-2.5"></div>
+      </div>
 
       <!-- 연습 완료 후 본 실험 시작 버튼 -->
       <button
         id="btn-begin-s2"
-        class="hidden px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-md shadow-emerald-200 transition cursor-pointer"
+        class="hidden px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base shadow-md shadow-emerald-200 transition cursor-pointer"
       >
         연습 완료! 2단계 본 실험 시작하기 <span class="text-emerald-100 text-sm ml-1">(Space)</span>
       </button>
@@ -438,32 +574,58 @@
     <!-- SCREEN 5: 2단계 화살표·스트룹 본 실험 -->
     <!-- ========================================================= -->
     <section id="screen-s2-task" class="screen text-center">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <span id="s2-task-hand-label" class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+      <!-- 상단 정보 + 우측 상단 콤보 카운터 (중앙 시야 방해 최소화) -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <span id="s2-task-hand-label" class="px-3.5 py-1 rounded-full bg-[#EBF5FF] text-[#004C97] text-xs font-extrabold">
           오른손 (우세손) · 2단계
         </span>
+
         <!-- 규칙 리마인더 배지 -->
         <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
-          🔵 파랑: 그대로 &nbsp;|&nbsp; 🔴 빨강: 반대로
+          🔵 순둥이: 그대로 &nbsp;|&nbsp; 🔴 청개구리: 반대로
         </span>
-        <span id="s2-progress-text" class="text-sm font-bold text-slate-600">1 / 32</span>
-      </div>
 
-      <!-- 진행 바 -->
-      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-8">
-        <div id="s2-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-200" style="width: 0%;"></div>
-      </div>
-
-      <!-- 중앙 자극 영역 -->
-      <div
-        id="s2-stimulus-box"
-        class="stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center mb-8 relative"
-      >
-        <div id="s2-stimulus-content" class="flex items-center justify-center">
-          <span class="text-4xl font-light text-slate-400">+</span>
+        <div class="flex items-center gap-2.5">
+          <span
+            id="s2-combo-badge"
+            class="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-xs font-extrabold tabular-nums transition-all duration-150 opacity-50"
+          >
+            🔥 0 COMBO
+          </span>
+          <span id="s2-progress-text" class="text-sm font-extrabold text-slate-600 tabular-nums">1 / 32</span>
         </div>
-        <!-- 피드백 오버레이 아이콘 -->
-        <div id="s2-feedback-icon" class="hidden absolute top-3 right-4 text-lg font-extrabold"></div>
+      </div>
+
+      <!-- 진행 바 + 끝에서 달리는 미니 연구원 푸앙이 -->
+      <div class="relative w-full mb-14 pt-3">
+        <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="s2-progress-bar" class="h-full bg-gradient-to-r from-[#004C97] to-[#79CBF2] rounded-full transition-all duration-200" style="width: 0%;"></div>
+        </div>
+        <div
+          id="s2-runner-puang"
+          class="absolute -top-2 -translate-x-1/2 transition-all duration-200 pointer-events-none"
+          style="left: 0%;"
+        ></div>
+      </div>
+
+      <!-- 중앙 자극 영역 + 상단 테두리 빼꼼 연구원 푸앙이 -->
+      <div class="relative max-w-md mx-auto mb-8">
+        <!-- 빼꼼 미니 푸앙이 (정답 시 ✨ 점프 / 오답 시 💫 흔들) -->
+        <div
+          id="s2-peek-puang"
+          class="absolute -top-[56px] left-1/2 -translate-x-1/2 z-10 pointer-events-none flex items-end justify-center"
+        ></div>
+
+        <div
+          id="s2-stimulus-box"
+          class="stimulus-box h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center relative z-20"
+        >
+          <div id="s2-stimulus-content" class="flex items-center justify-center">
+            <span class="text-5xl font-light text-slate-400">+</span>
+          </div>
+          <!-- 피드백 오버레이 아이콘 -->
+          <div id="s2-feedback-icon" class="hidden absolute top-3 right-4 text-2xl font-extrabold"></div>
+        </div>
       </div>
 
       <!-- 하단 4개 시각적 키 슬롯 -->
@@ -474,48 +636,230 @@
     <!-- SCREEN 6: 손 교대 휴식 화면 -->
     <!-- ========================================================= -->
     <section id="screen-break" class="screen text-center py-6">
-      <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-5">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-        </svg>
-      </div>
-      <span class="inline-block px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-3">
-        1차 측정 완료!
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-extrabold mb-3">
+        ✓ 1차 측정 완료!
       </span>
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
-        잠시 휴식 후 반대쪽 손을 측정합니다
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
+        손목 탈탈 털고 반대 손 준비!
       </h2>
       <p id="break-next-hand-desc" class="text-slate-600 text-sm sm:text-base mb-8">
-        다음은 <strong class="text-indigo-700">왼손 (비우세손)</strong> 차례입니다. 손목을 가볍게 풀어주세요.
+        다음은 <strong class="text-[#004C97]">왼손 (비우세손)</strong> 차례입니다. 잠깐 스트레칭하며 쉬어가세요.
       </p>
 
-      <div class="mb-8">
-        <div class="text-5xl font-extrabold text-indigo-600 tabular-nums" id="break-timer">10</div>
-        <p class="text-xs text-slate-500 mt-1">권장 휴식 카운트다운 (초)</p>
+      <!-- 원형 프로그레스 링 + 만세 스트레칭 푸앙이 -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
+        <div class="relative w-40 h-40 flex items-center justify-center">
+          <svg class="w-40 h-40 -rotate-90" width="160" height="160" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#DBEAFE" stroke-width="10" />
+            <circle
+              id="break-ring-circle"
+              class="break-ring-progress"
+              cx="60" cy="60" r="52"
+              fill="none"
+              stroke="#004C97"
+              stroke-width="10"
+              stroke-linecap="round"
+              stroke-dasharray="326.73"
+              stroke-dashoffset="0"
+            />
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <div class="text-4xl font-extrabold text-[#004C97] tabular-nums leading-none" id="break-timer">10</div>
+            <p class="text-[11px] font-bold text-slate-400 mt-1">초 남음</p>
+          </div>
+        </div>
+
+        <div class="bg-[#F6FAFF] border border-[#004C97]/15 rounded-2xl p-4 flex flex-col items-center max-w-[210px]">
+          <div id="break-stretch-puang" class="puang-float mb-1"></div>
+          <p class="text-xs font-extrabold text-[#004C97]">"손가락 쫙~ 폈다가 탈탈!"</p>
+        </div>
       </div>
 
       <button
         id="btn-next-hand"
-        class="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+        class="px-8 py-4 rounded-2xl bg-[#004C97] hover:bg-[#003E7D] text-white font-extrabold text-base shadow-md shadow-[#004C97]/25 transition cursor-pointer"
       >
         바로 다음 손 시작하기
       </button>
     </section>
 
     <!-- ========================================================= -->
-    <!-- SCREEN 7: 결과 분석 대시보드 및 내보내기 -->
+    <!-- SCREEN 7A: 세로형 뇌타입 진단 카드 페이지 (PAGE 1) -->
+    <!-- 중앙대 투명 푸앙이 연구원증 + 세로형 성격유형 카드 스타일 -->
     <!-- ========================================================= -->
-    <section id="screen-results" class="screen">
+    <section id="screen-results-card" class="screen">
+      <div class="max-w-[420px] mx-auto">
+
+        <!-- 이미지로 저장되는 세로형 투명 연구원증 진단 카드 -->
+        <div
+          id="diagnosis-card-capture"
+          class="cau-translucent-card relative rounded-[28px] border-2 border-[#79CBF2]/75 overflow-hidden p-5 sm:p-6"
+        >
+          <!-- 투명 학생증 대각선 유리광택 레이어 -->
+          <div class="cau-card-sheen absolute inset-0 pointer-events-none"></div>
+
+          <!-- 카드 내부 콘텐츠 래퍼 -->
+          <div class="relative z-10">
+            <!-- 1. 학생증·연구원증 스타일 최상단 헤더 (중앙대학교 + 골드 IC칩) -->
+            <div class="flex items-start justify-between mb-3.5">
+              <div>
+                <p class="text-[13px] font-black text-[#004C97] tracking-tight leading-none">중앙대학교 · PUANG NEURO LAB</p>
+                <p class="text-[9px] font-extrabold text-[#1E56A0]/80 tracking-[0.12em] uppercase mt-1">
+                  CHUNG-ANG UNIVERSITY · <span id="card-issue-date">2026.11.26</span>
+                </p>
+              </div>
+              <!-- 리얼 골드 IC 칩 SVG -->
+              <svg width="38" height="28" viewBox="0 0 42 32" class="shrink-0 drop-shadow-sm" aria-label="IC Chip">
+                <defs>
+                  <linearGradient id="icGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FCE59B" />
+                    <stop offset="50%" stop-color="#E5B94C" />
+                    <stop offset="100%" stop-color="#C9962B" />
+                  </linearGradient>
+                </defs>
+                <rect x="1" y="1" width="40" height="30" rx="6" fill="url(#icGoldGrad)" stroke="#A7791C" stroke-width="1.2" />
+                <line x1="14" y1="1.5" x2="14" y2="30.5" stroke="#9A6D14" stroke-width="1" />
+                <line x1="28" y1="1.5" x2="28" y2="30.5" stroke="#9A6D14" stroke-width="1" />
+                <line x1="1.5" y1="11" x2="14" y2="11" stroke="#9A6D14" stroke-width="1" />
+                <line x1="28" y1="11" x2="40.5" y2="11" stroke="#9A6D14" stroke-width="1" />
+                <line x1="1.5" y1="21" x2="14" y2="21" stroke="#9A6D14" stroke-width="1" />
+                <line x1="28" y1="21" x2="40.5" y2="21" stroke="#9A6D14" stroke-width="1" />
+                <rect x="16.5" y="10" width="9" height="12" rx="2" fill="none" stroke="#9A6D14" stroke-width="1" />
+              </svg>
+            </div>
+
+            <!-- 타입 넘버 배지 -->
+            <div class="flex justify-center mb-3">
+              <span
+                id="card-type-pill"
+                class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 border border-[#79CBF2] text-[#004C97] text-[11px] font-extrabold tracking-wider shadow-sm"
+              >
+                TYPE 01 · CAU NEURO ID
+              </span>
+            </div>
+
+            <!-- 2. 히어로 캐릭터 일러스트 프레임 (구름 배경 + 치비 연구실 가운 푸앙이) -->
+            <div class="cau-hero-window relative rounded-[22px] border-2 border-white/90 shadow-inner overflow-hidden h-[206px] flex items-end justify-center mb-4">
+              <!-- 몽글몽글 구름 배경 SVG -->
+              <svg class="absolute inset-0 w-full h-full pointer-events-none" width="360" height="206" viewBox="0 0 360 206" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <g fill="#FFFFFF" opacity="0.72">
+                  <circle cx="52" cy="54" r="24" />
+                  <circle cx="76" cy="48" r="28" />
+                  <circle cx="102" cy="56" r="20" />
+                  <circle cx="288" cy="46" r="22" />
+                  <circle cx="312" cy="42" r="26" />
+                  <circle cx="334" cy="52" r="18" />
+                </g>
+                <g fill="#FFFFFF" opacity="0.52">
+                  <ellipse cx="70" cy="186" rx="88" ry="34" />
+                  <ellipse cx="295" cy="190" rx="95" ry="36" />
+                </g>
+              </svg>
+
+              <!-- 우상단 미니 CAU 뱃지 -->
+              <span class="absolute top-3 right-3 px-2.5 py-0.5 rounded-full bg-[#004C97]/85 text-white text-[10px] font-extrabold tracking-wider">
+                CAU LAB
+              </span>
+
+              <!-- 타입별 치비 연구원 푸앙이 SVG -->
+              <div id="card-puang-illust" class="relative z-10 flex items-end justify-center pb-1"></div>
+            </div>
+
+            <!-- 3. 뇌타입 칭호 + 한 줄 요약 + 해시태그 -->
+            <div class="text-center mb-4">
+              <p id="card-subtitle-small" class="text-[11px] font-extrabold text-[#1E56A0] mb-0.5">
+                <span id="card-participant-nick">김푸앙</span> 연구원의 뇌 제어 유형
+              </p>
+              <h2 id="card-type-title" class="text-[22px] sm:text-2xl font-black text-slate-900 tracking-tight leading-snug mb-1.5">
+                🏆 양손 풀스택 청룡 푸앙
+              </h2>
+              <p id="card-type-oneliner" class="text-xs sm:text-[13px] font-semibold text-slate-600 leading-relaxed px-2 mb-3">
+                "좌뇌·우뇌 고속도로 개통 완료! 헷갈리는 규칙에도 흔들리지 않는 완벽 제어형"
+              </p>
+              <!-- 해시태그 칩 3개 -->
+              <div id="card-hashtags" class="flex flex-wrap justify-center gap-1.5"></div>
+            </div>
+
+            <!-- 4. 핵심 신경 밸런스 미터 3종 -->
+            <div class="bg-white/85 rounded-2xl border border-[#79CBF2]/55 p-3.5 mb-3.5 shadow-sm">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[11px] font-extrabold text-[#004C97]">⚡ 신경 제어 밸런스</span>
+                <span id="card-combo-mini" class="text-[11px] font-extrabold text-amber-600">🔥 최고 0 COMBO</span>
+              </div>
+              <div id="card-balance-meters" class="space-y-2"></div>
+            </div>
+
+            <!-- 5. 세로형 4줄 핵심 분석 요약 -->
+            <div class="bg-white/90 rounded-2xl border border-[#79CBF2]/55 p-4 mb-3.5 shadow-sm">
+              <p class="text-xs font-extrabold text-[#004C97] mb-2.5 flex items-center gap-1.5">
+                <span>🧪</span> 푸앙이 연구원 핵심 진단 노트
+              </p>
+              <ul id="card-bullet-list" class="space-y-2 text-[12px] text-slate-700 leading-relaxed"></ul>
+            </div>
+
+            <!-- 6. 하단 학생증/연구원증 서명 푸터 -->
+            <div class="flex items-center justify-between pt-2.5 border-t border-[#004C97]/15 text-[10px] font-bold text-[#1E56A0]/80">
+              <span>RESEARCHER ID · <strong id="card-footer-id" class="text-[#004C97]">P01</strong></span>
+              <span id="card-footer-hand">우세손: 오른손</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 카드 저장 상태 알림 메시지 (alert 대체) -->
+        <p id="card-save-toast" class="hidden text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl py-2 px-3 mt-3"></p>
+
+        <!-- 카드 하단 액션 버튼 영역 -->
+        <div class="mt-4 space-y-2.5">
+          <button
+            id="btn-go-detail"
+            class="w-full py-4 rounded-2xl bg-gradient-to-r from-[#004C97] to-[#1E56A0] hover:from-[#003E7D] hover:to-[#174685] text-white font-extrabold text-sm sm:text-base shadow-lg shadow-[#004C97]/25 transition cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>📊 자세한 신경 분석 리포트 보기</span>
+            <span>→</span>
+          </button>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <button
+              id="btn-save-card"
+              class="py-3 px-3 rounded-2xl bg-white hover:bg-[#EBF5FF] border-2 border-[#004C97]/25 text-[#004C97] font-extrabold text-xs sm:text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span>📸</span>
+              <span>진단 카드 저장</span>
+            </button>
+            <button
+              id="btn-reset-from-card"
+              class="py-3 px-3 rounded-2xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer"
+            >
+              🔄 새 참가자 측정
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 7B: 자세한 신경 분석 리포트 페이지 (PAGE 2) -->
+    <!-- ========================================================= -->
+    <section id="screen-results-detail" class="screen">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <span class="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-1.5">
-            실험 완료 · 신경 제어 프로파일 리포트
-          </span>
+          <div class="flex items-center gap-2 mb-1.5">
+            <button
+              id="btn-back-to-card"
+              class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EBF5FF] hover:bg-[#DBEAFE] text-[#004C97] text-xs font-extrabold transition cursor-pointer"
+            >
+              ← 진단 카드로 돌아가기
+            </button>
+            <span class="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold">
+              PAGE 2 · 상세 신경 프로파일
+            </span>
+          </div>
           <h2 class="text-2xl font-extrabold text-slate-900">
-            <span id="res-participant-name" class="text-indigo-600">참가자</span> 님의 양손 분석 결과
+            <span id="res-participant-name" class="text-[#004C97]">참가자</span> 님의 양손 정밀 분석 리포트
           </h2>
           <p id="res-meta-info" class="text-xs text-slate-500 mt-1"></p>
         </div>
+
         <div class="flex flex-wrap gap-2">
           <button
             id="btn-download-csv"
@@ -550,32 +894,32 @@
       </div>
 
       <!-- 핵심 인사이트 요약 박스 -->
-      <div id="res-insight-box" class="mb-6 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-sm text-indigo-950 leading-relaxed"></div>
+      <div id="res-insight-box" class="mb-6 p-4 rounded-2xl bg-[#EBF5FF]/80 border border-[#004C97]/20 text-sm text-slate-900 leading-relaxed"></div>
 
       <!-- 시각적 CSS 바 차트 섹션 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
         <!-- 차트 1: 반응속도 및 순수 뇌 처리 시간(ΔRT) 비교 -->
-        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+        <div class="bg-[#F6FAFF] rounded-2xl border border-[#004C97]/12 p-5">
           <h3 class="text-sm font-extrabold text-slate-800 mb-1">1단계 vs 2단계 & 순수 뇌 처리 시간 (ΔRT)</h3>
           <p class="text-xs text-slate-500 mb-4">돈더스 감산법: 2단계 정답 평균 - 1단계 평균 (ms)</p>
           <div id="chart-rt-bars" class="space-y-4"></div>
         </div>
 
         <!-- 차트 2: 손가락별 해상도 (오답률 비교) -->
-        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+        <div class="bg-[#F6FAFF] rounded-2xl border border-[#004C97]/12 p-5">
           <h3 class="text-sm font-extrabold text-slate-800 mb-1">손가락별 뇌 지도 해상도 (오답률 %)</h3>
           <p class="text-xs text-slate-500 mb-4">검지·중지(독립성 높음) vs 약지·새끼(신경 간섭 취약)</p>
           <div id="chart-finger-bars" class="space-y-4"></div>
         </div>
       </div>
 
-      <!-- 상세 비교 테이블 -->
+      <!-- 상세 비교 테이블 (7대 신경·심리학 지표) -->
       <div class="overflow-x-auto rounded-2xl border border-slate-200">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
-            <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider">
+            <tr class="bg-[#EBF5FF] text-[#004C97] text-xs uppercase tracking-wider">
               <th class="py-3.5 px-4 font-extrabold">분석 지표 (심리·신경과학 개념)</th>
-              <th class="py-3.5 px-4 font-extrabold text-center text-indigo-700">우세손 (<span id="th-dom-hand">오른손</span>)</th>
+              <th class="py-3.5 px-4 font-extrabold text-center text-[#004C97]">우세손 (<span id="th-dom-hand">오른손</span>)</th>
               <th class="py-3.5 px-4 font-extrabold text-center text-rose-700">비우세손 (<span id="th-non-hand">왼손</span>)</th>
               <th class="py-3.5 px-4 font-extrabold text-center">격차 (비우세 - 우세)</th>
             </tr>
@@ -588,15 +932,570 @@
     </section>
   </main>
 
-  <footer class="mt-5 text-center text-xs text-slate-400">
-    고정밀 타이머(performance.now) · 한/영 무관 키코드(e.code) · Fisher-Yates 균등 셔플 적용
+  <footer id="main-footer" class="mt-5 text-center text-xs text-slate-500 transition-opacity duration-300">
+    PUANG NEURO LAB · 고정밀 타이머(performance.now) · 한/영 무관 키코드(e.code) · Fisher-Yates 균등 셔플 적용
   </footer>
 
   <!-- ========================================================= -->
-  <!-- JAVASCRIPT 실험 엔진 -->
+  <!-- MODAL: 푸앙이 캐릭터 도감 (게임에 쓰이는 18종 전체 미리보기) -->
+  <!-- ========================================================= -->
+  <div id="puang-gallery-modal" class="hidden fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border-2 border-[#79CBF2]/70 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#EBF5FF] to-[#F6FAFF] border-b border-[#004C97]/15">
+        <div>
+          <span class="inline-block px-2 py-0.5 rounded bg-[#004C97] text-white text-[10px] font-extrabold tracking-wider mb-1">PUANG GALLERY</span>
+          <h3 class="text-lg sm:text-xl font-extrabold text-slate-900">🥼 푸앙이 연구원 캐릭터 도감 (총 18종)</h3>
+          <p class="text-xs text-slate-500 mt-0.5">시작·1단계·2단계·휴식·진단 카드에 등장하는 귀염뽀짝 연구원 푸앙이 전체 모음입니다.</p>
+        </div>
+        <button
+          id="btn-close-gallery"
+          type="button"
+          class="w-9 h-9 rounded-full bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-extrabold text-lg flex items-center justify-center transition cursor-pointer shrink-0"
+          aria-label="도감 닫기"
+        >
+          ✕
+        </button>
+      </div>
+      <div id="puang-gallery-grid" class="p-5 sm:p-6 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 bg-[#F8FBFF]"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- JAVASCRIPT 실험 엔진 + 귀염뽀짝 치비 연구원 푸앙이 SVG 시스템 -->
   <!-- ========================================================= -->
   <script>
-    const GOOGLE_SCRIPT_URL = ""; // 여기에 Google Apps Script 웹 앱 URL을 붙여넣으세요
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIwfeQF5Qcvt3854nTU6D3kiRU_gS1SXRfjstCXbdVfHcS-Aa_OWPbteAv68kui5tS/exec"; // 여기에 Google Apps Script 웹 앱 URL을 붙여넣으세요
+
+    /* -----------------------------------------------------------
+       0-A. Web Audio API 효과음 엔진 (외부 파일 불필요 · 음소거 토글)
+       ※ 1단계 GO 신호에는 소리를 재생하지 않아 순수 시각 반응속도를 유지합니다.
+    ----------------------------------------------------------- */
+    const SoundFX = {
+      enabled: true,
+      ctx: null,
+
+      ensureCtx() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+          return this.ctx;
+        } catch (err) {
+          return null;
+        }
+      },
+
+      toggle() {
+        this.enabled = !this.enabled;
+        const icon = document.getElementById('sound-icon');
+        const label = document.getElementById('sound-label');
+        if (icon) icon.textContent = this.enabled ? '🔊' : '🔇';
+        if (label) label.textContent = this.enabled ? '효과음 ON' : '효과음 OFF';
+        if (this.enabled) this.playClick();
+      },
+
+      playTone(freq, duration = 0.08, type = 'sine', gainVal = 0.09, startOffset = 0) {
+        if (!this.enabled) return;
+        const ctx = this.ensureCtx();
+        if (!ctx) return;
+        try {
+          const now = ctx.currentTime + startOffset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(gainVal, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        } catch (err) {
+          // 오디오 재생 제한 시 안전 무시
+        }
+      },
+
+      playClick() {
+        this.playTone(540, 0.055, 'triangle', 0.06);
+      },
+
+      playCorrect() {
+        this.playTone(760, 0.075, 'sine', 0.08, 0);
+        this.playTone(1040, 0.09, 'sine', 0.07, 0.045);
+      },
+
+      playWrong() {
+        this.playTone(215, 0.13, 'sawtooth', 0.06, 0);
+        this.playTone(170, 0.15, 'triangle', 0.06, 0.055);
+      },
+
+      playComplete() {
+        this.playTone(523.25, 0.12, 'triangle', 0.08, 0);
+        this.playTone(659.25, 0.12, 'triangle', 0.08, 0.09);
+        this.playTone(783.99, 0.16, 'triangle', 0.08, 0.18);
+        this.playTone(1046.5, 0.24, 'sine', 0.09, 0.27);
+      }
+    };
+
+    /* -----------------------------------------------------------
+       0-B. 귀염뽀짝 치비 비율 · 하얀 연구실 가운 푸앙이 SVG 엔진
+       - 모찌처럼 통통한 볼살, 뾰족한 정수리 뿔깃, 마시멜로 연베이지 Y자 사슴뿔
+       - 2단 반짝이 큰 눈 + 두툼한 흰 알약 눈썹 + 송곳니 미소 + 복숭아 볼터치 & 말린 수염
+       - 하얀 연구실 가운(CAU 블루 셔츠·넥타이, 주머니 파란펜/시험관, CAU 배지)
+    ----------------------------------------------------------- */
+    function getPuangSVG(variant = 'hero', size = 120) {
+      const uid = `pg_${variant}_${Math.random().toString(36).slice(2, 7)}`;
+      const strokeCol = '#233A5C';
+
+      // 빼꼼 전용 (자극 박스 위에서 고개만 쏙 내민 버전)
+      const isPeek = variant.startsWith('peek_');
+      const isMiniHead = variant === 'avatar' || variant === 'runner';
+      const vb = isPeek ? '0 0 180 124' : (isMiniHead ? '8 8 164 152' : '0 0 180 202');
+
+      // 공통 그라데이션 정의
+      const defs = `
+        <defs>
+          <radialGradient id="${uid}_head" cx="46%" cy="32%" r="68%">
+            <stop offset="0%" stop-color="#B9EDFF" />
+            <stop offset="56%" stop-color="#87D6F7" />
+            <stop offset="100%" stop-color="#5EB9E6" />
+          </radialGradient>
+          <linearGradient id="${uid}_horn" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#FFF0E3" />
+            <stop offset="55%" stop-color="#EBCAB4" />
+            <stop offset="100%" stop-color="#D4AC92" />
+          </linearGradient>
+          <radialGradient id="${uid}_cheek" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FF9FB8" stop-opacity="0.95" />
+            <stop offset="72%" stop-color="#FFB7CA" stop-opacity="0.82" />
+            <stop offset="100%" stop-color="#FFB7CA" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="${uid}_coat" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#EDF5FC" />
+          </linearGradient>
+        </defs>
+      `;
+
+      // 빨간 청개구리 망토 (rebel 전용 - 몸 뒤쪽)
+      const rebelCape = variant === 'rebel' ? `
+        <path d="M52 132 C34 146 28 176 34 192 C64 198 116 198 146 192 C152 176 146 146 128 132 Z"
+              fill="#EF4444" stroke="#991B1B" stroke-width="2.4" stroke-linejoin="round" />
+      ` : '';
+
+      // 2등신 치비 하얀 연구실 가운 몸통
+      let bodyGroup = '';
+      if (!isPeek && !isMiniHead) {
+        // 팔 포즈 분기
+        let armsMarkup = `
+          <!-- 기본 앙증맞은 양팔 -->
+          <path d="M54 143 C42 152 38 164 46 170 C54 174 62 164 65 154" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="45" cy="169" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+          <path d="M126 143 C138 152 142 164 134 170 C126 174 118 164 115 154" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="135" cy="169" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+        `;
+
+        if (variant === 'stretch' || variant === 'go' || variant === 'type_fullstack') {
+          armsMarkup = `
+            <!-- 만세 양팔 -->
+            <path d="M56 145 C42 136 33 122 39 114 C46 108 57 120 65 135" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="39" cy="114" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+            <path d="M124 145 C138 136 147 122 141 114 C134 108 123 120 115 135" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="141" cy="114" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+          `;
+        } else if (variant === 'hero' || variant === 'pure' || variant === 'rebel' || variant === 'type_iron' || variant === 'type_freeze' || variant === 'type_rush' || variant === 'type_balance') {
+          armsMarkup = `
+            <!-- 왼팔 내리고 오른팔 소품 들기 -->
+            <path d="M54 144 C42 153 38 165 46 170 C54 174 62 164 65 154" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="45" cy="169" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+            <path d="M125 144 C138 140 148 131 146 122 C143 115 132 123 120 135" fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="145" cy="123" r="6.8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" />
+          `;
+        }
+
+        bodyGroup = `
+          ${rebelCape}
+          <!-- 통통한 치비 발 -->
+          <ellipse cx="72" cy="190" rx="13" ry="8.5" fill="#74CAF0" stroke="${strokeCol}" stroke-width="2.5" />
+          <ellipse cx="108" cy="190" rx="13" ry="8.5" fill="#74CAF0" stroke="${strokeCol}" stroke-width="2.5" />
+
+          <!-- 하얀 연구실 가운 몸통 -->
+          <path d="M56 136 C51 154 50 176 54 185 C64 190 116 190 126 185 C130 176 129 154 124 136 Z"
+                fill="url(#${uid}_coat)" stroke="${strokeCol}" stroke-width="2.7" stroke-linejoin="round" />
+
+          <!-- CAU 블루 이너 셔츠 V넥 + 넥타이 -->
+          <polygon points="75,136 105,136 90,164" fill="#D8ECFF" stroke="${strokeCol}" stroke-width="1.8" stroke-linejoin="round" />
+          <path d="M87 139 L93 139 L94.5 155 L90 161 L85.5 155 Z" fill="#004C97" />
+          <polygon points="86,136 94,136 92,141 88,141" fill="#1E56A0" />
+
+          <!-- 가운 라펠(깃) & 앞여밈 선 -->
+          <path d="M74 136 L66 151 L78 158 L90 164" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="2" stroke-linejoin="round" />
+          <path d="M106 136 L114 151 L102 158 L90 164" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="2" stroke-linejoin="round" />
+          <line x1="90" y1="164" x2="90" y2="187" stroke="#94A3B8" stroke-width="1.8" />
+          <circle cx="85" cy="171" r="1.9" fill="#94A3B8" />
+          <circle cx="85" cy="180" r="1.9" fill="#94A3B8" />
+
+          <!-- 왼쪽 가슴 CAU 연구원 ID 배지 -->
+          <rect x="97" y="154" width="16" height="10" rx="2.5" fill="#004C97" />
+          <text x="105" y="161.2" text-anchor="middle" font-size="5.6" font-weight="900" fill="#FFFFFF" font-family="Inter, sans-serif">CAU</text>
+
+          <!-- 오른쪽 주머니 + 파란 펜 & 미니 시험관 -->
+          <rect x="61" y="168" width="15" height="12" rx="3" fill="#F8FBFF" stroke="#94A3B8" stroke-width="1.5" />
+          <line x1="65" y1="162" x2="66" y2="168" stroke="#004C97" stroke-width="2.3" stroke-linecap="round" />
+          <rect x="69.5" y="161.5" width="3.5" height="7" rx="1.5" fill="#38BDF8" stroke="#004C97" stroke-width="1" />
+
+          ${armsMarkup}
+        `;
+      } else if (isPeek) {
+        // 빼꼼용 작은 하얀 가운 깃 + 앙증맞은 손
+        bodyGroup = `
+          <path d="M58 112 C62 122 118 122 122 112" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="2.5" />
+          <circle cx="48" cy="116" r="8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.4" />
+          <circle cx="132" cy="116" r="8" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.4" />
+        `;
+      }
+
+      // 눈/입/표정 분기 (베이비 스키마: 얼굴 중앙 살짝 아래 배치)
+      let eyesMarkup = `
+        <!-- 기본 초롱초롱 2단 반짝이 큰 눈 -->
+        <ellipse cx="64" cy="91" rx="9.8" ry="12.2" fill="#1C2F52" />
+        <circle cx="60.5" cy="86.2" r="3.6" fill="#FFFFFF" />
+        <circle cx="67.2" cy="95.2" r="1.7" fill="#FFFFFF" opacity="0.85" />
+        <ellipse cx="116" cy="91" rx="9.8" ry="12.2" fill="#1C2F52" />
+        <circle cx="112.5" cy="86.2" r="3.6" fill="#FFFFFF" />
+        <circle cx="119.2" cy="95.2" r="1.7" fill="#FFFFFF" opacity="0.85" />
+      `;
+
+      let mouthMarkup = `
+        <!-- 공식 푸앙이 송곳니 미소 -->
+        <path d="M68 109 Q90 118 112 109" fill="none" stroke="${strokeCol}" stroke-width="2.7" stroke-linecap="round" />
+        <polygon points="75,112 78.5,118.5 82.5,113.5" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="1.3" stroke-linejoin="round" />
+        <polygon points="105,112 101.5,118.5 97.5,113.5" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="1.3" stroke-linejoin="round" />
+      `;
+
+      let extraOverlay = '';
+
+      if (variant === 'sleep') {
+        eyesMarkup = `
+          <path d="M54 92 Q64 99 74 92" fill="none" stroke="#1C2F52" stroke-width="3.4" stroke-linecap="round" />
+          <path d="M106 92 Q116 99 126 92" fill="none" stroke="#1C2F52" stroke-width="3.4" stroke-linecap="round" />
+        `;
+        mouthMarkup = `
+          <ellipse cx="90" cy="112" rx="4.8" ry="3.8" fill="#F9A8D4" stroke="${strokeCol}" stroke-width="2" />
+          <!-- 귀여운 콧방울 버블 -->
+          <circle cx="101" cy="108" r="7.5" fill="#E0F2FE" fill-opacity="0.85" stroke="#38BDF8" stroke-width="1.6" />
+          <circle cx="99" cy="105.5" r="2.2" fill="#FFFFFF" />
+        `;
+        extraOverlay = `
+          <text x="136" y="42" font-size="16" font-weight="900" fill="#004C97" font-family="Inter, sans-serif">Z</text>
+          <text x="148" y="30" font-size="12" font-weight="900" fill="#38BDF8" font-family="Inter, sans-serif">z</text>
+        `;
+      } else if (variant === 'go') {
+        eyesMarkup = `
+          <ellipse cx="64" cy="90" rx="10.8" ry="13.2" fill="#1C2F52" />
+          <circle cx="60" cy="84.5" r="4.2" fill="#FFFFFF" />
+          <circle cx="68" cy="94" r="2.2" fill="#FDE047" />
+          <ellipse cx="116" cy="90" rx="10.8" ry="13.2" fill="#1C2F52" />
+          <circle cx="112" cy="84.5" r="4.2" fill="#FFFFFF" />
+          <circle cx="120" cy="94" r="2.2" fill="#FDE047" />
+        `;
+        mouthMarkup = `
+          <path d="M69 107 Q90 130 111 107 Z" fill="#1C2F52" stroke="${strokeCol}" stroke-width="2.2" stroke-linejoin="round" />
+          <path d="M77 115 Q90 126 103 115 Q90 111 77 115 Z" fill="#FDA4AF" />
+          <polygon points="75,109 79,115.5 83,110" fill="#FFFFFF" />
+          <polygon points="105,109 101,115.5 97,110" fill="#FFFFFF" />
+        `;
+        extraOverlay = `
+          <polygon points="150,74 139,94 147,94 142,112 158,90 149,90" fill="#FACC15" stroke="#B45309" stroke-width="1.8" stroke-linejoin="round" />
+          <polygon points="30,74 41,94 33,94 38,112 22,90 31,90" fill="#FACC15" stroke="#B45309" stroke-width="1.8" stroke-linejoin="round" />
+        `;
+      } else if (variant === 'panic') {
+        eyesMarkup = `
+          <path d="M56 85 L71 91 L56 97" fill="none" stroke="#1C2F52" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M124 85 L109 91 L124 97" fill="none" stroke="#1C2F52" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+        `;
+        mouthMarkup = `
+          <path d="M74 114 Q82 108 90 114 Q98 120 106 114" fill="none" stroke="${strokeCol}" stroke-width="2.8" stroke-linecap="round" />
+        `;
+        extraOverlay = `
+          <path d="M142 66 C142 66 150 78 142 84 C134 78 142 66 142 66 Z" fill="#38BDF8" stroke="#0284C7" stroke-width="1.6" />
+          <path d="M35 60 L42 66 M32 72 L40 73" stroke="#EF4444" stroke-width="2.6" stroke-linecap="round" />
+        `;
+      } else if (variant === 'peek_happy' || variant === 'stretch' || variant === 'type_fullstack') {
+        eyesMarkup = `
+          <path d="M54 92 Q64 81 74 92" fill="none" stroke="#1C2F52" stroke-width="3.6" stroke-linecap="round" />
+          <path d="M106 92 Q116 81 126 92" fill="none" stroke="#1C2F52" stroke-width="3.6" stroke-linecap="round" />
+        `;
+        mouthMarkup = `
+          <path d="M70 106 Q90 128 110 106 Z" fill="#1C2F52" stroke="${strokeCol}" stroke-width="2.2" stroke-linejoin="round" />
+          <path d="M78 115 Q90 124 102 115 Q90 111 78 115 Z" fill="#FDA4AF" />
+          <polygon points="75,108 79,114.5 83,109" fill="#FFFFFF" />
+          <polygon points="105,108 101,114.5 97,109" fill="#FFFFFF" />
+        `;
+        if (variant === 'peek_happy') {
+          extraOverlay = `
+            <path d="M24 44 L27 52 L35 55 L27 58 L24 66 L21 58 L13 55 L21 52 Z" fill="#FACC15" />
+            <path d="M154 40 L157 47 L164 50 L157 53 L154 60 L151 53 L144 50 L151 47 Z" fill="#34D399" />
+          `;
+        }
+      } else if (variant === 'peek_dizzy' || variant === 'type_freeze') {
+        eyesMarkup = `
+          <circle cx="64" cy="91" r="9.5" fill="none" stroke="#1C2F52" stroke-width="2.6" />
+          <circle cx="64" cy="91" r="4.5" fill="none" stroke="#1C2F52" stroke-width="2.2" />
+          <circle cx="64" cy="91" r="1.6" fill="#1C2F52" />
+          <circle cx="116" cy="91" r="9.5" fill="none" stroke="#1C2F52" stroke-width="2.6" />
+          <circle cx="116" cy="91" r="4.5" fill="none" stroke="#1C2F52" stroke-width="2.2" />
+          <circle cx="116" cy="91" r="1.6" fill="#1C2F52" />
+        `;
+        mouthMarkup = `
+          <ellipse cx="90" cy="113" rx="6.5" ry="4.5" fill="#1C2F52" />
+          <ellipse cx="90" cy="114.5" rx="4" ry="2.2" fill="#FDA4AF" />
+        `;
+        extraOverlay = `
+          <path d="M24 52 C29 44 38 44 41 52" fill="none" stroke="#F43F5E" stroke-width="2.5" stroke-linecap="round" />
+          <circle cx="152" cy="48" r="4" fill="#FACC15" />
+        `;
+      } else if (variant === 'rebel') {
+        // 장난기 넘치는 청개구리 표정
+        mouthMarkup = `
+          <path d="M72 110 Q90 120 110 107" fill="none" stroke="${strokeCol}" stroke-width="2.8" stroke-linecap="round" />
+          <polygon points="77,112 80.5,118 84,113.5" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="1.3" />
+          <polygon points="104,110 101,116.5 97.5,112" fill="#FFFFFF" stroke="${strokeCol}" stroke-width="1.3" />
+        `;
+        extraOverlay = `
+          <!-- 빨간 반대로 피켓 -->
+          <line x1="150" y1="122" x2="150" y2="94" stroke="#7F1D1D" stroke-width="3" stroke-linecap="round" />
+          <rect x="134" y="68" width="32" height="28" rx="8" fill="#EF4444" stroke="#991B1B" stroke-width="2" />
+          <text x="150" y="87" text-anchor="middle" font-size="16" font-weight="900" fill="#FFFFFF">↔</text>
+        `;
+      } else if (variant === 'pure') {
+        extraOverlay = `
+          <!-- 파란 그대로 피켓 -->
+          <line x1="150" y1="122" x2="150" y2="94" stroke="#1E3A8A" stroke-width="3" stroke-linecap="round" />
+          <rect x="134" y="68" width="32" height="28" rx="8" fill="#2563EB" stroke="#1E40AF" stroke-width="2" />
+          <text x="150" y="87" text-anchor="middle" font-size="16" font-weight="900" fill="#FFFFFF">→</text>
+        `;
+      }
+
+      // 변형별 연구원 소품 (안경, 플라스크, 트로피, 방패, 돋보기, 스톱워치, 브레인 전구)
+      let propMarkup = '';
+      if (variant === 'hero') {
+        propMarkup = `
+          <!-- 동그란 연구원 안경 -->
+          <circle cx="64" cy="91" r="15" fill="#FFFFFF" fill-opacity="0.16" stroke="#004C97" stroke-width="2.4" />
+          <circle cx="116" cy="91" r="15" fill="#FFFFFF" fill-opacity="0.16" stroke="#004C97" stroke-width="2.4" />
+          <path d="M79 90 Q90 87 101 90" fill="none" stroke="#004C97" stroke-width="2.4" />
+          <!-- 빛나는 CAU 플라스크 -->
+          <path d="M148 92 L156 92 L156 102 L166 118 C168 121 166 125 162 125 L142 125 C138 125 136 121 138 118 L148 102 Z"
+                fill="#E0F2FE" stroke="#004C97" stroke-width="2.1" stroke-linejoin="round" />
+          <path d="M142 117 L162 117 L164 122 C164 123.5 163 124 161 124 L143 124 C141 124 140 123.5 140 122 Z" fill="#38BDF8" />
+          <circle cx="152" cy="85" r="2.8" fill="#7DD3FC" />
+          <circle cx="158" cy="79" r="2" fill="#BAE6FD" />
+        `;
+      } else if (variant === 'type_fullstack') {
+        propMarkup = `
+          <!-- 황금 트로피 -->
+          <path d="M137 86 H163 V98 C163 106 157 111 150 111 C143 111 137 106 137 98 Z" fill="#FACC15" stroke="#B45309" stroke-width="2" />
+          <rect x="147" y="111" width="6" height="8" fill="#EAB308" />
+          <rect x="141" y="118" width="18" height="5" rx="2" fill="#B45309" />
+          <path d="M24 56 L27 63 L34 66 L27 69 L24 76 L21 69 L14 66 L21 63 Z" fill="#FACC15" />
+        `;
+      } else if (variant === 'type_iron') {
+        propMarkup = `
+          <!-- 철벽 CAU 방패 -->
+          <path d="M136 88 L151 82 L166 88 V104 C166 114 159 121 151 124 C143 121 136 114 136 104 Z"
+                fill="#004C97" stroke="#0F172A" stroke-width="2" stroke-linejoin="round" />
+          <path d="M145 103 L150 108 L158 98" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
+        `;
+      } else if (variant === 'type_freeze') {
+        propMarkup = `
+          <!-- 연구원 돋보기 -->
+          <circle cx="152" cy="96" r="13" fill="#E0F2FE" fill-opacity="0.7" stroke="#004C97" stroke-width="2.6" />
+          <line x1="143" y1="106" x2="136" y2="117" stroke="#004C97" stroke-width="4" stroke-linecap="round" />
+        `;
+      } else if (variant === 'type_rush') {
+        propMarkup = `
+          <!-- 스톱워치 + 스피드 번개 -->
+          <circle cx="151" cy="103" r="14" fill="#FFFFFF" stroke="#004C97" stroke-width="2.4" />
+          <rect x="147" y="84" width="8" height="4" rx="1.5" fill="#004C97" />
+          <line x1="151" y1="103" x2="151" y2="94" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round" />
+          <line x1="151" y1="103" x2="158" y2="106" stroke="#004C97" stroke-width="2" stroke-linecap="round" />
+          <polygon points="32,54 22,70 29,70 25,84 39,66 31,66" fill="#FACC15" stroke="#B45309" stroke-width="1.5" />
+        `;
+      } else if (variant === 'type_balance') {
+        propMarkup = `
+          <!-- 반짝이는 브레인 전구 -->
+          <circle cx="151" cy="94" r="13" fill="#FEF08A" stroke="#CA8A04" stroke-width="2.2" />
+          <rect x="146" y="106" width="10" height="6" rx="2" fill="#94A3B8" stroke="#475569" stroke-width="1.4" />
+          <path d="M151 74 V78 M168 94 H164 M134 94 H138" stroke="#EAB308" stroke-width="2.2" stroke-linecap="round" />
+        `;
+      }
+
+      // 공식 푸앙이 모찌 얼굴 + Y자 마시멜로 사슴뿔 + 정수리 뾰족 뿔깃 + 작은 귀
+      const headGroup = `
+        <!-- 말랑한 파스텔 Y자 사슴뿔 -->
+        <path d="M62 49 C57 39 50 30 46 21 C44 16 50 13 54 18 C57 22 60 28 63 34 C65 26 68 20 73 21 C78 22 76 31 71 42 Z"
+              fill="url(#${uid}_horn)" stroke="${strokeCol}" stroke-width="2.3" stroke-linejoin="round" />
+        <path d="M118 49 C123 39 130 30 134 21 C136 16 130 13 126 18 C123 22 120 28 117 34 C115 26 112 20 107 21 C102 22 104 31 109 42 Z"
+              fill="url(#${uid}_horn)" stroke="${strokeCol}" stroke-width="2.3" stroke-linejoin="round" />
+
+        <!-- 작은 둥근 용 귀 -->
+        <path d="M40 60 C31 50 36 39 46 45 C50 47 52 52 52 56 Z" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" stroke-linejoin="round" />
+        <path d="M140 60 C149 50 144 39 134 45 C130 47 128 52 128 56 Z" fill="#87D6F7" stroke="${strokeCol}" stroke-width="2.3" stroke-linejoin="round" />
+
+        <!-- 통통한 모찌/만두형 얼굴 + 정수리 뾰족 뿔깃 -->
+        <path d="M90 30 C95 38 103 42 114 44 C138 48 153 69 152 94 C151 122 130 140 90 140 C50 140 29 122 28 94 C27 69 42 48 66 44 C77 42 85 38 90 30 Z"
+              fill="url(#${uid}_head)" stroke="${strokeCol}" stroke-width="2.7" stroke-linejoin="round" />
+
+        <!-- 이마 은은한 광택 하이라이트 -->
+        <ellipse cx="72" cy="56" rx="14" ry="6" fill="#FFFFFF" opacity="0.32" transform="rotate(-14 72 56)" />
+
+        <!-- 두툼한 흰색 알약 눈썹 (공식 푸앙이 시그니처) -->
+        <rect x="57" y="66" width="17" height="7.8" rx="4" fill="#FFFFFF" transform="rotate(-13 65 70)" />
+        <rect x="106" y="66" width="17" height="7.8" rx="4" fill="#FFFFFF" transform="rotate(13 115 70)" />
+
+        <!-- 보송한 복숭아 볼터치 -->
+        <circle cx="44" cy="107" r="13" fill="url(#${uid}_cheek)" />
+        <circle cx="136" cy="107" r="13" fill="url(#${uid}_cheek)" />
+
+        <!-- 눈 -->
+        ${eyesMarkup}
+
+        <!-- 코 브릿지 + 작은 콧구멍 2개 -->
+        <path d="M84 95 Q90 92.5 96 95" fill="none" stroke="${strokeCol}" stroke-width="1.9" stroke-linecap="round" />
+        <ellipse cx="86.5" cy="99" rx="1.6" ry="2.2" fill="${strokeCol}" transform="rotate(-22 86.5 99)" />
+        <ellipse cx="93.5" cy="99" rx="1.6" ry="2.2" fill="${strokeCol}" transform="rotate(22 93.5 99)" />
+
+        <!-- 입 -->
+        ${mouthMarkup}
+
+        <!-- 양쪽 말린 수염 (공식 푸앙이 디테일) -->
+        <path d="M43 108 C35 114 27 110 29 102 C31 98 35 100 34 103" fill="none" stroke="${strokeCol}" stroke-width="2.2" stroke-linecap="round" />
+        <path d="M137 108 C145 114 153 110 151 102 C149 98 145 100 146 103" fill="none" stroke="${strokeCol}" stroke-width="2.2" stroke-linecap="round" />
+      `;
+
+      return `
+        <svg width="${size}" height="${isPeek ? Math.round(size * 0.68) : (isMiniHead ? size : Math.round(size * 1.12))}" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="푸앙이 ${variant}">
+          ${defs}
+          ${bodyGroup}
+          ${headGroup}
+          ${extraOverlay}
+          ${propMarkup}
+        </svg>
+      `;
+    }
+
+    /* 손가락 배치 반투명 실루엣 SVG */
+    function getHandGuideSVG(hand = 'right', highlightIndexOnly = false) {
+      const activeFill = '#004C97';
+      const normalFill = '#93C5FD';
+      const dimFill = '#CBD5E1';
+
+      if (hand === 'left') {
+        const fPinky = highlightIndexOnly ? dimFill : normalFill;
+        const fRing  = highlightIndexOnly ? dimFill : normalFill;
+        const fMid   = highlightIndexOnly ? dimFill : normalFill;
+        const fIndex = activeFill;
+        return `
+          <svg width="210" height="58" viewBox="0 0 210 58" aria-label="왼손 손가락 배치 가이드">
+            <rect x="16"  y="20" width="22" height="32" rx="11" fill="${fPinky}" opacity="0.65" />
+            <rect x="64"  y="10" width="22" height="42" rx="11" fill="${fRing}"  opacity="0.72" />
+            <rect x="112" y="4"  width="22" height="48" rx="11" fill="${fMid}"   opacity="0.78" />
+            <rect x="160" y="10" width="22" height="42" rx="11" fill="${fIndex}" opacity="0.88" />
+            <circle cx="27"  cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="75"  cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="123" cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="171" cy="44" r="4.5" fill="#FFFFFF" />
+          </svg>
+        `;
+      } else {
+        const fIndex = activeFill;
+        const fMid   = highlightIndexOnly ? dimFill : normalFill;
+        const fRing  = highlightIndexOnly ? dimFill : normalFill;
+        const fPinky = highlightIndexOnly ? dimFill : normalFill;
+        return `
+          <svg width="210" height="58" viewBox="0 0 210 58" aria-label="오른손 손가락 배치 가이드">
+            <rect x="28"  y="10" width="22" height="42" rx="11" fill="${fIndex}" opacity="0.88" />
+            <rect x="76"  y="4"  width="22" height="48" rx="11" fill="${fMid}"   opacity="0.78" />
+            <rect x="124" y="10" width="22" height="42" rx="11" fill="${fRing}"  opacity="0.72" />
+            <rect x="172" y="20" width="22" height="32" rx="11" fill="${fPinky}" opacity="0.65" />
+            <circle cx="39"  cy="44" r="4.5" fill="#FFFFFF" />
+            <circle cx="87"  cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="135" cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="183" cy="44" r="4" fill="#FFFFFF" opacity="0.8" />
+          </svg>
+        `;
+      }
+    }
+
+    /* 푸앙이 도감 목록 (18종 전체) */
+    const PUANG_GALLERY_ITEMS = [
+      { id: 'avatar',         name: '미니 연구원 아바타',   desc: '상단 헤더 로고',          size: 82 },
+      { id: 'hero',           name: '안경·플라스크 푸앙',   desc: '시작 화면 메인 연구원',    size: 98 },
+      { id: 'brief',          name: '브리핑 푸앙',          desc: '1단계 손 안내',            size: 98 },
+      { id: 'sleep',          name: '졸림 콧방울 푸앙',     desc: '1단계 대기 상태',          size: 98 },
+      { id: 'go',             name: '눈 번쩍 번개 푸앙',    desc: '1단계 초록 GO 신호',       size: 98 },
+      { id: 'panic',          name: '식은땀 당황 푸앙',     desc: '1단계 부정출발',           size: 98 },
+      { id: 'pure',           name: '순둥이 파랑 푸앙',     desc: '2단계 규칙(그대로)',       size: 98 },
+      { id: 'rebel',          name: '청개구리 빨강 푸앙',   desc: '2단계 규칙(반대로)',       size: 98 },
+      { id: 'peek_idle',      name: '빼꼼 기본 푸앙',       desc: '2단계 자극 박스 상단',     size: 110 },
+      { id: 'peek_happy',     name: '빼꼼 정답 ✨ 푸앙',    desc: '2단계 정답 점프 피드백',   size: 110 },
+      { id: 'peek_dizzy',     name: '빼꼼 오답 💫 푸앙',    desc: '2단계 오답 흔들 피드백',   size: 110 },
+      { id: 'runner',         name: '달리는 미니 푸앙',     desc: '2단계 진행 바 러너',       size: 80 },
+      { id: 'stretch',        name: '만세 스트레칭 푸앙',   desc: '손 교대 휴식 화면',        size: 98 },
+      { id: 'type_fullstack', name: '🏆 풀스택 청룡 푸앙',  desc: '진단 카드 TYPE 01',        size: 98 },
+      { id: 'type_iron',      name: '🛡️ 철벽 청개구리 푸앙', desc: '진단 카드 TYPE 02',       size: 98 },
+      { id: 'type_freeze',    name: '🔍 뇌정지 탐구 푸앙',  desc: '진단 카드 TYPE 03',        size: 98 },
+      { id: 'type_rush',      name: '⚡ 급발진 스톱워치 푸앙', desc: '진단 카드 TYPE 04',      size: 98 },
+      { id: 'type_balance',   name: '💡 밸런스 브레인 푸앙', desc: '진단 카드 TYPE 05',       size: 98 },
+    ];
+
+    function setHtmlSafe(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
+    function initStaticGraphics() {
+      setHtmlSafe('header-puang-avatar', getPuangSVG('avatar', 40));
+      setHtmlSafe('start-puang-hero', getPuangSVG('hero', 130));
+      setHtmlSafe('start-left-hand-svg', getHandGuideSVG('left', false));
+      setHtmlSafe('start-right-hand-svg', getHandGuideSVG('right', false));
+      setHtmlSafe('s1-brief-puang', getPuangSVG('brief', 96));
+      setHtmlSafe('rule-pure-puang', getPuangSVG('pure', 64));
+      setHtmlSafe('rule-rebel-puang', getPuangSVG('rebel', 64));
+      setHtmlSafe('s2-runner-puang', getPuangSVG('runner', 34));
+      setHtmlSafe('s2-peek-puang', getPuangSVG('peek_idle', 94));
+      setHtmlSafe('break-stretch-puang', getPuangSVG('stretch', 102));
+    }
+
+    function openPuangGallery() {
+      SoundFX.playClick();
+      const grid = document.getElementById('puang-gallery-grid');
+      if (grid && grid.children.length === 0) {
+        grid.innerHTML = PUANG_GALLERY_ITEMS.map(item => `
+          <div class="bg-white rounded-2xl border border-[#004C97]/15 p-3.5 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-[#79CBF2] transition">
+            <div class="h-28 flex items-center justify-center mb-2">
+              ${getPuangSVG(item.id, item.size)}
+            </div>
+            <p class="text-xs font-extrabold text-slate-900 leading-snug">${item.name}</p>
+            <p class="text-[11px] font-medium text-slate-500 mt-0.5">${item.desc}</p>
+          </div>
+        `).join('');
+      }
+      const modal = document.getElementById('puang-gallery-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closePuangGallery() {
+      SoundFX.playClick();
+      const modal = document.getElementById('puang-gallery-modal');
+      if (modal) modal.classList.add('hidden');
+    }
 
     /* -----------------------------------------------------------
        1. 상수 및 손가락/키보드 대칭 매핑 정의
@@ -669,7 +1568,7 @@
         dominantHand: 'right',
         firstTestedHand: 'right',
         handOrder: ['right', 'left'],
-        currentHandIdx: 0, // 0: 첫 번째 손, 1: 두 번째 손
+        currentHandIdx: 0,
         mode: 'full',
 
         // 1단계 상태
@@ -689,6 +1588,8 @@
         s2Phase: 'idle', // idle | fixation | stimulus | feedback
         s2StimulusTime: 0,
         s2PrevError: 0,
+        s2Combo: 0,
+        maxCombo: 0,
 
         // 타이머 핸들
         timers: [],
@@ -733,13 +1634,22 @@
       };
     }
 
-    /* 화면 전환 */
+    /* 화면 전환 + 포커스 모드 / 세로 카드 스테이지 모드 제어 */
     function showScreen(screenId) {
       clearAllTimers();
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       const target = document.getElementById(screenId);
       if (target) target.classList.add('active');
       state.screen = screenId;
+
+      const isFocus = (screenId === 'screen-s1-task' || screenId === 'screen-s2-task');
+      document.body.classList.toggle('focus-mode', isFocus);
+
+      const mainEl = document.getElementById('main-container');
+      if (mainEl) {
+        mainEl.classList.toggle('card-stage-mode', screenId === 'screen-results-card');
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -755,8 +1665,6 @@
 
     /* -----------------------------------------------------------
        3. 2단계 균형 자극 목록 생성
-       - Full(32회): 4방향 x 8회 (일치 파랑 4 + 불일치 빨강 4)
-       - Demo(12회): 4방향 x 3회 (전체 파랑 6 + 빨강 6 균형 배정)
     ----------------------------------------------------------- */
     function generateStage2Trials(mode) {
       const dirs = ['left', 'down', 'up', 'right'];
@@ -772,7 +1680,6 @@
           }
         });
       } else {
-        // Demo 12회: 각 방향 3회씩, 파랑 6회 / 빨강 6회 균형
         const shuffledDirs = shuffle(dirs);
         shuffledDirs.forEach((targetDir, idx) => {
           const blueCount = idx < 2 ? 2 : 1;
@@ -788,7 +1695,6 @@
       return shuffle(list);
     }
 
-    /* 4회 연습 목록 생성 (파랑 2, 빨강 2, 4방향 골고루) */
     function generatePracticeTrials() {
       const dirs = shuffle(['left', 'down', 'up', 'right']);
       return shuffle([
@@ -799,20 +1705,19 @@
       ]);
     }
 
-    /* 4개 키 슬롯 렌더링 */
     function renderKeySlots(containerId, handKey) {
       const container = document.getElementById(containerId);
+      if (!container) return;
       const keys = HAND_CONFIG[handKey].keys;
       container.innerHTML = keys.map(k => `
         <div data-code="${k.code}" class="keycap bg-white border-2 border-slate-300 rounded-2xl py-3 px-2 text-center select-none">
           <div class="text-lg font-extrabold text-slate-900 leading-none">${k.keyLabel}</div>
-          <div class="text-xl font-black text-indigo-600 my-1 leading-none">${k.arrow}</div>
+          <div class="text-xl font-black text-[#004C97] my-1 leading-none">${k.arrow}</div>
           <div class="text-xs font-semibold text-slate-500">${k.finger}</div>
         </div>
       `).join('');
     }
 
-    /* 눌린 키 슬롯 하이라이트 */
     function flashKeySlot(containerId, code, type) {
       const el = document.querySelector(`#${containerId} [data-code="${code}"]`);
       if (!el) return;
@@ -821,21 +1726,53 @@
       setTimeout(() => el.classList.remove(cls), 190);
     }
 
+    function updateComboUI(combo) {
+      const badge = document.getElementById('s2-combo-badge');
+      if (!badge) return;
+      badge.textContent = `🔥 ${combo} COMBO`;
+      if (combo >= 2) {
+        badge.className = 'px-2.5 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-700 text-xs font-extrabold tabular-nums transition-all duration-150 combo-pop';
+        setTimeout(() => badge.classList.remove('combo-pop'), 230);
+      } else if (combo === 1) {
+        badge.className = 'px-2.5 py-1 rounded-full bg-[#EBF5FF] border border-[#79CBF2] text-[#004C97] text-xs font-extrabold tabular-nums transition-all duration-150';
+      } else {
+        badge.className = 'px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-xs font-extrabold tabular-nums transition-all duration-150 opacity-50';
+      }
+    }
+
+    function setPeekPuang(mood) {
+      const el = document.getElementById('s2-peek-puang');
+      if (!el) return;
+      el.classList.remove('puang-jump', 'puang-wiggle');
+      void el.offsetWidth;
+      if (mood === 'happy') {
+        el.innerHTML = getPuangSVG('peek_happy', 94);
+        el.classList.add('puang-jump');
+      } else if (mood === 'dizzy') {
+        el.innerHTML = getPuangSVG('peek_dizzy', 94);
+        el.classList.add('puang-wiggle');
+      } else {
+        el.innerHTML = getPuangSVG('peek_idle', 94);
+      }
+    }
+
     /* -----------------------------------------------------------
        4. Screen 1 -> Screen 2: 실험 시작 로직
     ----------------------------------------------------------- */
-    document.getElementById('btn-start-experiment').addEventListener('click', () => {
+    function startExperimentFromForm() {
       const idInput = document.getElementById('input-participant-id');
       const errMsg = document.getElementById('id-error-msg');
       const pid = idInput.value.trim();
 
       if (!pid) {
+        SoundFX.playWrong();
         errMsg.classList.remove('hidden');
         idInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
         idInput.focus();
         return;
       }
 
+      SoundFX.playClick();
       errMsg.classList.add('hidden');
       idInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
 
@@ -862,7 +1799,7 @@
       state.mode = modeChoice;
 
       openStage1Brief();
-    });
+    }
 
     /* -----------------------------------------------------------
        5. Screen 2 -> Screen 3: 1단계 단순 반응 과제
@@ -874,12 +1811,12 @@
       document.getElementById('s1-brief-hand-text').textContent = `${info.config.label} 검지`;
       document.getElementById('s1-brief-key').textContent = info.config.indexKeyLabel;
       document.getElementById('s1-brief-key-desc').textContent = `${info.config.label} 검지 (${info.config.indexKeyLabel} 키)`;
+      setHtmlSafe('s1-brief-hand-svg', getHandGuideSVG(info.hand, true));
       showScreen('screen-s1-brief');
     }
 
-    document.getElementById('btn-begin-s1').addEventListener('click', startStage1Task);
-
     function startStage1Task() {
+      SoundFX.playClick();
       const info = getCurrentHand();
       state.s1TrialIdx = 0;
       state.s1Phase = 'idle';
@@ -902,14 +1839,16 @@
       document.getElementById('s1-progress-bar').style.width = `${(state.s1TrialIdx / total) * 100}%`;
 
       const circle = document.getElementById('s1-circle');
+      const puangBox = document.getElementById('s1-circle-puang');
       const mainTxt = document.getElementById('s1-circle-main');
       const subTxt = document.getElementById('s1-circle-sub');
       const fb = document.getElementById('s1-feedback-msg');
 
-      circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-slate-200 text-slate-600 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner';
-      mainTxt.textContent = '기다리세요...';
-      subTxt.textContent = `초록색이 뜨면 ${info.config.indexKeyLabel} 키를 누르세요`;
-      fb.innerHTML = `지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-extrabold">${info.config.indexKeyLabel}</span> (${info.config.label} 검지)`;
+      circle.className = 'w-60 h-60 sm:w-64 sm:h-64 rounded-full bg-[#EBF5FF] border-4 border-[#BFDBFE] text-slate-700 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner';
+      puangBox.innerHTML = getPuangSVG('sleep', 82);
+      mainTxt.textContent = '기다리세요... 💤';
+      subTxt.textContent = `초록색이 뜨면 ${info.config.indexKeyLabel} 키!`;
+      fb.innerHTML = `지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-[#EBF5FF] text-[#004C97] font-extrabold">${info.config.indexKeyLabel}</span> (${info.config.label} 검지)`;
       fb.className = 'text-sm font-bold text-slate-500';
 
       state.s1Phase = 'waiting';
@@ -920,9 +1859,11 @@
         state.s1Phase = 'go';
         state.s1StimulusTime = performance.now();
 
-        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center transition-colors duration-75 shadow-lg pulse-go';
-        mainTxt.textContent = '누르세요!';
-        subTxt.textContent = `${info.config.indexKeyLabel} 키`;
+        // 순수 시각 반응속도 측정을 위해 GO 시점에는 효과음 재생 안 함
+        circle.className = 'w-60 h-60 sm:w-64 sm:h-64 rounded-full bg-emerald-500 border-4 border-emerald-300 text-white flex flex-col items-center justify-center transition-colors duration-75 shadow-lg pulse-go';
+        puangBox.innerHTML = getPuangSVG('go', 86);
+        mainTxt.textContent = '지금! ⚡';
+        subTxt.textContent = `${info.config.indexKeyLabel} 키 누르세요!`;
       }, delay);
     }
 
@@ -931,18 +1872,21 @@
       if (e.code !== info.config.indexCode) return;
 
       const circle = document.getElementById('s1-circle');
+      const puangBox = document.getElementById('s1-circle-puang');
       const mainTxt = document.getElementById('s1-circle-main');
       const subTxt = document.getElementById('s1-circle-sub');
       const fb = document.getElementById('s1-feedback-msg');
 
       if (state.s1Phase === 'waiting') {
-        // 부정출발 처리: 기록하지 않고 타이머 재시작
         clearAllTimers();
+        SoundFX.playWrong();
         state.s1Phase = 'feedback';
-        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-red-500 text-white flex flex-col items-center justify-center shadow-md';
-        mainTxt.textContent = '부정출발!';
-        subTxt.textContent = '다시 대기합니다';
-        fb.textContent = '너무 빨랐습니다! 초록색이 뜬 뒤 눌러주세요.';
+
+        circle.className = 'w-60 h-60 sm:w-64 sm:h-64 rounded-full bg-red-500 border-4 border-red-300 text-white flex flex-col items-center justify-center shadow-md';
+        puangBox.innerHTML = getPuangSVG('panic', 82);
+        mainTxt.textContent = '부정출발! 💦';
+        subTxt.textContent = '어?! 너무 빨랐어요!';
+        fb.textContent = '초록색으로 바뀐 뒤에 눌러주세요. 다시 대기합니다.';
         fb.className = 'text-sm font-bold text-red-600';
 
         addTimer(() => {
@@ -952,8 +1896,8 @@
         const rt = performance.now() - state.s1StimulusTime;
         const rtRounded = Number(rt.toFixed(1));
         state.s1Phase = 'feedback';
+        SoundFX.playCorrect();
 
-        // 시행 기록
         state.trials.push({
           participantId: state.participantId,
           dominantHand: state.dominantHand,
@@ -974,9 +1918,10 @@
         const total = MODE_CONFIG[state.mode].s1Trials;
         document.getElementById('s1-progress-bar').style.width = `${(state.s1TrialIdx / total) * 100}%`;
 
-        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-emerald-100 border-4 border-emerald-500 text-emerald-700 flex flex-col items-center justify-center';
+        circle.className = 'w-60 h-60 sm:w-64 sm:h-64 rounded-full bg-emerald-50 border-4 border-emerald-500 text-emerald-700 flex flex-col items-center justify-center';
+        puangBox.innerHTML = getPuangSVG('peek_happy', 84);
         mainTxt.textContent = `${Math.round(rt)} ms`;
-        subTxt.textContent = '기록 완료';
+        subTxt.textContent = '기록 완료!';
 
         addTimer(() => {
           runNextStage1Trial();
@@ -990,6 +1935,7 @@
     function openStage2Intro() {
       const info = getCurrentHand();
       document.getElementById('s2-intro-hand-badge').textContent = `${info.config.label} (${info.handTypeKo})`;
+      setHtmlSafe('s2-intro-hand-svg', getHandGuideSVG(info.hand, false));
       renderKeySlots('s2-intro-keyslots', info.hand);
 
       state.practiceTrials = generatePracticeTrials();
@@ -1009,11 +1955,9 @@
       showScreen('screen-s2-intro');
     }
 
-    document.getElementById('btn-start-practice').addEventListener('click', startPracticeRound);
-    document.getElementById('btn-begin-s2').addEventListener('click', startStage2Task);
-
     function startPracticeRound() {
       if (state.practiceActive) return;
+      SoundFX.playClick();
       state.practiceActive = true;
       state.practiceIdx = 0;
       document.getElementById('btn-start-practice').classList.add('hidden');
@@ -1025,6 +1969,7 @@
       if (state.practiceIdx >= state.practiceTrials.length) {
         state.practiceActive = false;
         state.practiceWaitingKey = false;
+        SoundFX.playComplete();
         document.getElementById('practice-progress').textContent = '연습 완료 (4 / 4)';
         document.getElementById('practice-arrow-display').innerHTML = '<span class="text-base font-extrabold text-emerald-600">✓ 4회 연습을 모두 마쳤습니다!</span>';
         document.getElementById('practice-feedback').textContent = '준비되셨다면 아래 버튼을 누르거나 Space 키로 본 실험을 시작하세요.';
@@ -1049,7 +1994,7 @@
         if (state.screen !== 'screen-s2-intro' || !state.practiceActive) return;
         const colorHex = trial.condition === 'congruent' ? '#2563eb' : '#dc2626';
         disp.innerHTML = getArrowSVG(trial.stimulusDir, colorHex, 86);
-        fb.textContent = trial.condition === 'congruent' ? '🔵 파랑: 보이는 방향 그대로!' : '🔴 빨강: 정반대 방향으로!';
+        fb.textContent = trial.condition === 'congruent' ? '🔵 순둥이 파랑: 보이는 방향 그대로!' : '🔴 청개구리 빨강: 정반대 방향으로!';
         fb.className = trial.condition === 'congruent' ? 'text-xs font-bold text-blue-600 h-5' : 'text-xs font-bold text-red-600 h-5';
         state.practiceWaitingKey = true;
       }, 450);
@@ -1071,10 +2016,12 @@
       flashKeySlot('s2-intro-keyslots', e.code, isCorrect ? 'correct' : 'wrong');
 
       if (isCorrect) {
+        SoundFX.playCorrect();
         box.classList.add('feedback-correct');
         fb.textContent = `정답입니다! (${keyObj.finger} · ${keyObj.arrow})`;
         fb.className = 'text-xs font-bold text-emerald-600 h-5';
       } else {
+        SoundFX.playWrong();
         box.classList.add('feedback-wrong');
         fb.textContent = `아쉬워요! 정답은 [${correctKeyObj.keyLabel} · ${correctKeyObj.arrow} (${correctKeyObj.finger})] 입니다.`;
         fb.className = 'text-xs font-bold text-red-600 h-5';
@@ -1090,14 +2037,21 @@
        7. Screen 5: 2단계 화살표·스트룹 본 실험
     ----------------------------------------------------------- */
     function startStage2Task() {
+      SoundFX.playClick();
       const info = getCurrentHand();
       state.s2Trials = generateStage2Trials(state.mode);
       state.s2TrialIdx = 0;
       state.s2Phase = 'idle';
       state.s2PrevError = 0;
+      state.s2Combo = 0;
 
       document.getElementById('s2-task-hand-label').textContent = `${info.config.label} (${info.handTypeKo}) · 2단계 화살표·스트룹`;
       renderKeySlots('s2-task-keyslots', info.hand);
+      updateComboUI(0);
+      setPeekPuang('idle');
+
+      const runner = document.getElementById('s2-runner-puang');
+      if (runner) runner.style.left = '0%';
 
       showScreen('screen-s2-task');
       runNextStage2Trial();
@@ -1110,16 +2064,20 @@
         return;
       }
 
+      const pct = (state.s2TrialIdx / total) * 100;
       document.getElementById('s2-progress-text').textContent = `${state.s2TrialIdx + 1} / ${total}`;
-      document.getElementById('s2-progress-bar').style.width = `${(state.s2TrialIdx / total) * 100}%`;
+      document.getElementById('s2-progress-bar').style.width = `${pct}%`;
+      const runner = document.getElementById('s2-runner-puang');
+      if (runner) runner.style.left = `${pct}%`;
 
       const box = document.getElementById('s2-stimulus-box');
       const content = document.getElementById('s2-stimulus-content');
       const fbIcon = document.getElementById('s2-feedback-icon');
 
-      box.className = 'stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center mb-8 relative';
+      box.className = 'stimulus-box h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center relative z-20';
       content.innerHTML = '<span class="text-5xl font-light text-slate-400">+</span>';
       fbIcon.classList.add('hidden');
+      setPeekPuang('idle');
 
       state.s2Phase = 'fixation';
       const fixationDelay = 450 + Math.random() * 200; // 450ms ~ 650ms
@@ -1129,7 +2087,7 @@
         const trial = state.s2Trials[state.s2TrialIdx];
         const colorHex = trial.condition === 'congruent' ? '#2563eb' : '#dc2626';
 
-        box.className = 'stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-white border-4 border-slate-200 flex items-center justify-center mb-8 relative shadow-sm';
+        box.className = 'stimulus-box h-52 sm:h-56 rounded-3xl bg-white border-4 border-slate-200 flex items-center justify-center relative z-20 shadow-sm';
         content.innerHTML = getArrowSVG(trial.stimulusDir, colorHex, 124);
 
         state.s2Phase = 'stimulus';
@@ -1168,19 +2126,28 @@
         prevError: state.s2PrevError
       });
 
-      // 다음 시행을 위해 현재 오답 여부 갱신 (오류 후 지연 PES 분석용)
       state.s2PrevError = isCorrect === 0 ? 1 : 0;
 
-      // 180ms 즉각 시각 피드백
       const box = document.getElementById('s2-stimulus-box');
       const fbIcon = document.getElementById('s2-feedback-icon');
       flashKeySlot('s2-task-keyslots', e.code, isCorrect ? 'correct' : 'wrong');
 
       if (isCorrect) {
+        SoundFX.playCorrect();
+        state.s2Combo += 1;
+        if (state.s2Combo > state.maxCombo) state.maxCombo = state.s2Combo;
+        updateComboUI(state.s2Combo);
+        setPeekPuang('happy');
+
         box.classList.add('feedback-correct');
         fbIcon.textContent = '✓';
         fbIcon.className = 'absolute top-3 right-4 text-2xl font-extrabold text-emerald-600';
       } else {
+        SoundFX.playWrong();
+        state.s2Combo = 0;
+        updateComboUI(0);
+        setPeekPuang('dizzy');
+
         box.classList.add('feedback-wrong');
         fbIcon.textContent = '✕';
         fbIcon.className = 'absolute top-3 right-4 text-2xl font-extrabold text-red-600';
@@ -1188,7 +2155,10 @@
 
       state.s2TrialIdx += 1;
       const total = state.s2Trials.length;
-      document.getElementById('s2-progress-bar').style.width = `${(state.s2TrialIdx / total) * 100}%`;
+      const nextPct = (state.s2TrialIdx / total) * 100;
+      document.getElementById('s2-progress-bar').style.width = `${nextPct}%`;
+      const runner = document.getElementById('s2-runner-puang');
+      if (runner) runner.style.left = `${nextPct}%`;
 
       addTimer(() => {
         runNextStage2Trial();
@@ -1196,9 +2166,10 @@
     }
 
     /* -----------------------------------------------------------
-       8. Screen 6: 손 교대 휴식 화면 또는 결과 화면 이동
+       8. Screen 6: 손 교대 휴식 화면 (원형 프로그레스 링 포함)
     ----------------------------------------------------------- */
     function finishCurrentHand() {
+      SoundFX.playComplete();
       if (state.currentHandIdx === 0) {
         state.currentHandIdx = 1;
         openBreakScreen();
@@ -1210,17 +2181,30 @@
     function openBreakScreen() {
       const nextInfo = getCurrentHand();
       document.getElementById('break-next-hand-desc').innerHTML =
-        `다음은 <strong class="text-indigo-700">${nextInfo.config.label} (${nextInfo.handTypeKo})</strong> 차례입니다. 손목을 가볍게 풀어주세요.`;
+        `다음은 <strong class="text-[#004C97]">${nextInfo.config.label} (${nextInfo.handTypeKo})</strong> 차례입니다. 손목을 가볍게 풀어주세요.`;
 
-      let remain = 10;
+      const totalSec = 10;
+      const circumference = 2 * Math.PI * 52; // 326.73
+      let remain = totalSec;
+
       const timerEl = document.getElementById('break-timer');
+      const ringEl = document.getElementById('break-ring-circle');
       timerEl.textContent = remain;
+      if (ringEl) {
+        ringEl.style.strokeDasharray = circumference;
+        ringEl.style.strokeDashoffset = 0;
+      }
+
       showScreen('screen-break');
 
       state.breakInterval = setInterval(() => {
         remain -= 1;
+        const progress = Math.max(0, remain) / totalSec;
+        if (ringEl) {
+          ringEl.style.strokeDashoffset = circumference * (1 - progress);
+        }
         if (remain <= 0) {
-          timerEl.textContent = '준비 완료!';
+          timerEl.textContent = 'GO!';
           clearInterval(state.breakInterval);
           state.breakInterval = null;
         } else {
@@ -1229,24 +2213,25 @@
       }, 1000);
     }
 
-    document.getElementById('btn-next-hand').addEventListener('click', () => {
-      openStage1Brief();
-    });
-
     /* -----------------------------------------------------------
        9. 전역 키보드 리스너 (e.code 기반 · e.repeat 차단)
     ----------------------------------------------------------- */
     window.addEventListener('keydown', (e) => {
-      // 텍스트 입력 중에는 단축키 무시
+      // 도감 모달 열려있으면 ESC로 닫기
+      const galleryModal = document.getElementById('puang-gallery-modal');
+      if (galleryModal && !galleryModal.classList.contains('hidden')) {
+        if (e.code === 'Escape') closePuangGallery();
+        return;
+      }
+
       if (document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
         return;
       }
 
       if (e.repeat) return;
 
-      // 스페이스바 스크롤 방지 및 화면별 시작 트리거
       if (e.code === 'Space') {
-        if (state.screen !== 'screen-start' && state.screen !== 'screen-results') {
+        if (state.screen !== 'screen-start' && state.screen !== 'screen-results-card' && state.screen !== 'screen-results-detail') {
           e.preventDefault();
         }
         if (state.screen === 'screen-s1-brief') {
@@ -1256,9 +2241,9 @@
         if (state.screen === 'screen-s2-intro') {
           const btnPractice = document.getElementById('btn-start-practice');
           const btnBeginS2 = document.getElementById('btn-begin-s2');
-          if (!btnPractice.classList.contains('hidden')) {
+          if (btnPractice && !btnPractice.classList.contains('hidden')) {
             startPracticeRound();
-          } else if (!btnBeginS2.classList.contains('hidden')) {
+          } else if (btnBeginS2 && !btnBeginS2.classList.contains('hidden')) {
             startStage2Task();
           }
           return;
@@ -1304,16 +2289,13 @@
       const s2Acc = s2.length > 0 ? (s2Correct.length / s2.length) * 100 : null;
       const deltaRt = (s2Rt !== null && s1Rt !== null) ? (s2Rt - s1Rt) : null;
 
-      // 반응 일관성 (2단계 전체 시행 표준편차 및 >= 1000ms 뇌정지 횟수)
       const s2Sd = stdDev(s2.map(t => t.rtMs));
       const freezeCnt = s2.filter(t => t.rtMs >= 1000).length;
 
-      // 스트룹 간섭 비용 (불일치 정답 평균 - 일치 정답 평균)
       const congRt = mean(s2Correct.filter(t => t.condition === 'congruent').map(t => t.rtMs));
       const incongRt = mean(s2Correct.filter(t => t.condition === 'incongruent').map(t => t.rtMs));
       const stroopCost = (incongRt !== null && congRt !== null) ? (incongRt - congRt) : null;
 
-      // 손가락별 해상도 (검지·중지 vs 약지·새끼)
       const imTrials = s2.filter(t => t.targetFinger === '검지' || t.targetFinger === '중지');
       const rpTrials = s2.filter(t => t.targetFinger === '약지' || t.targetFinger === '새끼');
 
@@ -1327,7 +2309,6 @@
       const imCorrectRt = mean(imTrials.filter(t => t.isCorrect === 1).map(t => t.rtMs));
       const rpCorrectRt = mean(rpTrials.filter(t => t.isCorrect === 1).map(t => t.rtMs));
 
-      // 오류 후 지연 (PES: 오답 직후 시행 평균 RT - 정답 직후 시행 평균 RT, 1번 시행 제외)
       const postErrTrials = s2.filter(t => t.trialNum > 1 && t.prevError === 1);
       const postCorTrials = s2.filter(t => t.trialNum > 1 && t.prevError === 0);
       const postErrRt = mean(postErrTrials.map(t => t.rtMs));
@@ -1352,7 +2333,153 @@
     }
 
     /* -----------------------------------------------------------
-       11. Screen 7: 결과 렌더링 + 구글 시트 전송 + CSV 내보내기
+       11. 푸앙이 뇌타입 자동 진단 & 세로형 투명 연구원증 렌더링
+    ----------------------------------------------------------- */
+    function classifyBrainType(dom, non, domHandKo, nonHandKo) {
+      const avgAcc = mean([dom.s2_acc, non.s2_acc].filter(v => v !== null)) ?? 0;
+      const avgS1 = mean([dom.s1_rt, non.s1_rt].filter(v => v !== null)) ?? 300;
+      const deltaGap = (non.delta_rt !== null && dom.delta_rt !== null) ? Math.abs(non.delta_rt - dom.delta_rt) : 999;
+      const avgStroop = mean([dom.stroop_cost, non.stroop_cost].filter(v => v !== null));
+      const rpJump = (non.rp_err_rate !== null && non.im_err_rate !== null) ? (non.rp_err_rate - non.im_err_rate) : 0;
+
+      if (deltaGap <= 55 && avgAcc >= 88) {
+        return {
+          code: 'TYPE 01 · DUAL-CORE DRAGON',
+          variant: 'type_fullstack',
+          title: '🏆 양손 풀스택 청룡 푸앙',
+          oneliner: '"좌뇌·우뇌 고속도로 개통 완료! 복잡한 인지 전환에도 양손 모두 흔들림 없는 최상위 제어형"',
+          tags: ['#양손풀스택', '#좌우뇌밸런스', '#신경고속도로'],
+          bullets: [
+            `<strong>초정밀 양손 동기화:</strong> 우세손과 비우세손의 순수 뇌 처리 시간(ΔRT) 격차가 단 <strong>${round1(deltaGap)}ms</strong>에 불과합니다.`,
+            `<strong>안정적 정확도:</strong> 전체 2단계 평균 정확도 <strong>${round1(avgAcc)}%</strong>로, 빠르면서도 실수가 극히 적습니다.`,
+            `<strong>높은 인지 유연성:</strong> 순둥이(파랑)와 청개구리(빨강) 규칙이 섞여도 침착하게 반응합니다.`,
+            `<strong>연구원 한마디:</strong> 중앙대 뇌과학 연구소 명예 수석 연구원 자격을 수여합니다!`
+          ]
+        };
+      }
+
+      if (avgStroop !== null && avgStroop <= 45 && avgAcc >= 80) {
+        return {
+          code: 'TYPE 02 · IRON INHIBITION',
+          variant: 'type_iron',
+          title: '🛡️ 철벽 멘탈 청개구리 푸앙',
+          oneliner: '"빨간 화살표 훼이크 따위 안 속음! 전두엽 억제 제어력이 압도적인 멘탈 최강형"',
+          tags: ['#전두엽철벽', '#스트룹면역', '#훼이크차단'],
+          bullets: [
+            `<strong>탁월한 간섭 차단:</strong> 불일치(빨강) 조건에서의 스트룹 간섭 비용이 평균 <strong>${round1(avgStroop)}ms</strong>로 매우 낮습니다.`,
+            `<strong>자동 반응 억제력:</strong> 눈에 보이는 방향의 유혹을 즉각 끊어내고 반대 키를 누르는 능력이 뛰어납니다.`,
+            `<strong>양손 인지 적응:</strong> ${domHandKo}(${fmtVal(dom.s2_acc, '%')})과 ${nonHandKo}(${fmtVal(non.s2_acc, '%')}) 모두 규칙 혼동이 적습니다.`,
+            `<strong>연구원 한마디:</strong> 심리전이나 리듬·전략 게임에서 남다른 강점을 보일 뇌 타입입니다!`
+          ]
+        };
+      }
+
+      if (rpJump >= 12 || (non.rp_err_rate !== null && non.rp_err_rate >= 30)) {
+        return {
+          code: 'TYPE 03 · FINGER ENSLAVING',
+          variant: 'type_freeze',
+          title: '🔍 약지·새끼 뇌정지 푸앙',
+          oneliner: '"뇌: 약지 움직여! / 새끼손가락: 저도 갈게요! 비우세손 손가락 신경 간섭이 선명한 교과서형"',
+          tags: ['#약지새끼동기화', '#신경해상도', '#뇌지도발견'],
+          bullets: [
+            `<strong>손가락 신경 간섭 포착:</strong> ${nonHandKo}(비우세손) 약지·새끼 오답률(<strong>${fmtVal(non.rp_err_rate, '%')}</strong>)이 검지·중지(${fmtVal(non.im_err_rate, '%')})보다 뚜렷하게 높았습니다.`,
+            `<strong>운동 피질 해상도 차이:</strong> 자주 안 쓰는 손의 약지·새끼는 뇌 지도 영역이 인접해 함께 움직이기 쉽습니다.`,
+            `<strong>우세손의 힘:</strong> 반면 ${domHandKo}(우세손)에서는 전체 정확도 <strong>${fmtVal(dom.s2_acc, '%')}</strong>로 훨씬 독립적인 제어를 보였습니다.`,
+            `<strong>연구원 한마디:</strong> 본 실험의 핵심 가설인 ‘손가락별 신경 해상도’를 가장 드라마틱하게 증명한 데이터예요!`
+          ]
+        };
+      }
+
+      if (avgS1 <= 290 && avgAcc < 82) {
+        return {
+          code: 'TYPE 04 · HYPER REFLEX',
+          variant: 'type_rush',
+          title: '⚡ 빛의 속도 급발진 푸앙',
+          oneliner: '"생각보다 손가락이 먼저 나가는 타입! 단순 반사신경은 번개급이지만 가끔 브레이크가 밀려요"',
+          tags: ['#반사신경만렙', '#빛의속도', '#선입력후고민'],
+          bullets: [
+            `<strong>번개급 1단계 반응:</strong> 단순 반응속도 평균 <strong>${round1(avgS1)}ms</strong>로 신경 전달 속도가 매우 빠릅니다.`,
+            `<strong>속도-정확도 트레이드오프:</strong> 빠른 반응 템포를 유지하다 보니 인지 전환 구간에서 오답이 일부 발생했습니다(평균 정확도 ${round1(avgAcc)}%).`,
+            `<strong>과감한 실행력:</strong> 망설임(1초 이상 뇌정지)이 적고 즉각적으로 행동에 옮기는 스타일입니다.`,
+            `<strong>연구원 한마디:</strong> 반 박자만 여유를 두면 정확도와 속도 모두 최상위권을 찍을 잠재력이 큽니다!`
+          ]
+        };
+      }
+
+      return {
+        code: 'TYPE 05 · BALANCED LAB',
+        variant: 'type_balance',
+        title: '💡 밸런스 브레인 연구원 푸앙',
+        oneliner: '"속도와 정확도의 황금비율! 우세손의 숙련도와 비우세손의 인지 부하가 정석대로 나타나는 모범형"',
+        tags: ['#황금밸런스', '#정석데이터', '#차분한제어'],
+        bullets: [
+          `<strong>안정적 기본기:</strong> 1단계 단순 반응 평균 <strong>${round1(avgS1)}ms</strong>, 2단계 평균 정확도 <strong>${round1(avgAcc)}%</strong>로 균형 잡힌 수행을 보였습니다.`,
+          `<strong>우세손 숙련도 우위:</strong> ${domHandKo} 순수 뇌 처리 시간(${fmtVal(dom.delta_rt, 'ms')})과 ${nonHandKo}(${fmtVal(non.delta_rt, 'ms')})의 차이가 자연스럽게 관찰됩니다.`,
+          `<strong>안정적 페이스 유지:</strong> 극단적인 실수나 흔들림 없이 차분하게 과제를 완주했습니다.`,
+          `<strong>연구원 한마디:</strong> 다음 페이지 상세 리포트에서 손가락별 오답률과 오류 후 지연(PES)까지 꼭 확인해 보세요!`
+        ]
+      };
+    }
+
+    function renderVerticalDiagnosisCard(dom, non, domHandKo, nonHandKo) {
+      const diag = classifyBrainType(dom, non, domHandKo, nonHandKo);
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+
+      document.getElementById('card-issue-date').textContent = dateStr;
+      document.getElementById('card-type-pill').textContent = diag.code;
+      setHtmlSafe('card-puang-illust', getPuangSVG(diag.variant, 168));
+      document.getElementById('card-participant-nick').textContent = state.participantId;
+      document.getElementById('card-type-title').textContent = diag.title;
+      document.getElementById('card-type-oneliner').textContent = diag.oneliner;
+      document.getElementById('card-combo-mini').textContent = `🔥 최고 ${state.maxCombo} COMBO`;
+      document.getElementById('card-footer-id').textContent = state.participantId;
+      document.getElementById('card-footer-hand').textContent = `우세손: ${domHandKo}`;
+
+      document.getElementById('card-hashtags').innerHTML = diag.tags.map(tag => `
+        <span class="px-2.5 py-1 rounded-full bg-white/90 border border-[#79CBF2]/80 text-[#004C97] text-[11px] font-extrabold shadow-sm">${tag}</span>
+      `).join('');
+
+      // 3대 밸런스 점수 (0~100%)
+      const avgS1 = mean([dom.s1_rt, non.s1_rt].filter(v => v !== null)) ?? 350;
+      const avgAcc = mean([dom.s2_acc, non.s2_acc].filter(v => v !== null)) ?? 0;
+      const deltaGap = (non.delta_rt !== null && dom.delta_rt !== null) ? Math.abs(non.delta_rt - dom.delta_rt) : 120;
+
+      const reflexScore = Math.round(Math.min(99, Math.max(25, 118 - (avgS1 - 170) * 0.25)));
+      const accuracyScore = Math.round(Math.min(100, Math.max(10, avgAcc)));
+      const syncScore = Math.round(Math.min(99, Math.max(20, 100 - deltaGap * 0.42)));
+
+      const meters = [
+        { label: '⚡ 단순 반사신경', score: reflexScore, color: 'from-[#004C97] to-[#38BDF8]' },
+        { label: '🎯 인지 제어 정확도', score: accuracyScore, color: 'from-[#059669] to-[#34D399]' },
+        { label: '🧠 양손 뇌 동기화', score: syncScore, color: 'from-[#2563EB] to-[#818CF8]' },
+      ];
+
+      document.getElementById('card-balance-meters').innerHTML = meters.map(m => `
+        <div>
+          <div class="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
+            <span>${m.label}</span>
+            <span class="text-[#004C97] font-extrabold tabular-nums">${m.score}%</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
+            <div class="bar-fill h-full bg-gradient-to-r ${m.color} rounded-full" style="width: ${m.score}%"></div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('card-bullet-list').innerHTML = diag.bullets.map(b => `
+        <li class="flex items-start gap-2">
+          <span class="text-[#004C97] font-black mt-0.5 shrink-0">•</span>
+          <span>${b}</span>
+        </li>
+      `).join('');
+
+      const toast = document.getElementById('card-save-toast');
+      if (toast) toast.classList.add('hidden');
+    }
+
+    /* -----------------------------------------------------------
+       12. Screen 7A & 7B: 결과 렌더링 + 구글 시트 전송 + PNG/CSV 내보내기
     ----------------------------------------------------------- */
     function openResultsScreen() {
       const dom = computeHandMetrics('dominant');
@@ -1364,11 +2491,11 @@
 
       document.getElementById('res-participant-name').textContent = state.participantId;
       document.getElementById('res-meta-info').textContent =
-        `우세손: ${domHandKo} · 첫 측정 손: ${firstHandKo} · 모드: ${MODE_CONFIG[state.mode].label} · 총 ${state.trials.length}회 기록`;
+        `우세손: ${domHandKo} · 첫 측정 손: ${firstHandKo} · 모드: ${MODE_CONFIG[state.mode].label} · 총 ${state.trials.length}회 기록 · 최고 ${state.maxCombo} COMBO`;
       document.getElementById('th-dom-hand').textContent = domHandKo;
       document.getElementById('th-non-hand').textContent = nonHandKo;
 
-      // JSON 페이로드 구성 (지정된 정확한 스키마 준수)
+      // JSON 페이로드 구성 (정확한 기존 스키마 100% 유지)
       const payload = {
         timestamp: new Date().toISOString(),
         participantId: state.participantId,
@@ -1401,14 +2528,16 @@
       };
       state.lastPayload = payload;
 
-      // 핵심 해석 문구 생성
+      // 1페이지: 세로형 투명 연구원증 진단 카드 렌더링
+      renderVerticalDiagnosisCard(dom, non, domHandKo, nonHandKo);
+
+      // 2페이지: 상세 신경 분석 리포트 렌더링
       renderInsightBox(dom, non, domHandKo, nonHandKo);
-      // CSS 바 차트 렌더링
       renderBarCharts(dom, non);
-      // 상세 비교 테이블 렌더링
       renderComparisonTable(dom, non);
 
-      showScreen('screen-results');
+      // 먼저 1페이지(세로형 진단 카드)를 보여줌
+      showScreen('screen-results-card');
 
       // 구글 시트 자동 전송 시도
       uploadToGoogleSheet(payload);
@@ -1443,7 +2572,6 @@
     }
 
     function renderBarCharts(dom, non) {
-      // 차트 1: RT 및 ΔRT 비교
       const maxRt = Math.max(dom.s1_rt || 0, non.s1_rt || 0, dom.s2_rt || 0, non.s2_rt || 0, dom.delta_rt || 0, non.delta_rt || 0, 500);
       const rtItems = [
         { label: '1단계 단순 반응', domV: dom.s1_rt, nonV: non.s1_rt },
@@ -1462,9 +2590,9 @@
             </div>
             <div class="space-y-1.5">
               <div class="flex items-center gap-2">
-                <span class="w-10 text-[11px] font-bold text-indigo-700">우세</span>
+                <span class="w-10 text-[11px] font-bold text-[#004C97]">우세</span>
                 <div class="flex-1 h-4 bg-slate-200/80 rounded-full overflow-hidden">
-                  <div class="bar-fill h-full bg-indigo-600 rounded-full" style="width: ${domW}%"></div>
+                  <div class="bar-fill h-full bg-[#004C97] rounded-full" style="width: ${domW}%"></div>
                 </div>
                 <span class="w-16 text-right text-xs font-bold text-slate-700 tabular-nums">${fmtVal(item.domV, 'ms')}</span>
               </div>
@@ -1480,10 +2608,9 @@
         `;
       }).join('');
 
-      // 차트 2: 손가락 그룹별 오답률 (%)
       const fingerItems = [
-        { label: '우세손 · 검지/중지 오답률', val: dom.im_err_rate, color: 'bg-indigo-400', text: 'text-indigo-700' },
-        { label: '우세손 · 약지/새끼 오답률', val: dom.rp_err_rate, color: 'bg-indigo-600', text: 'text-indigo-800' },
+        { label: '우세손 · 검지/중지 오답률', val: dom.im_err_rate, color: 'bg-[#3B82F6]', text: 'text-[#1E56A0]' },
+        { label: '우세손 · 약지/새끼 오답률', val: dom.rp_err_rate, color: 'bg-[#004C97]', text: 'text-[#004C97]' },
         { label: '비우세손 · 검지/중지 오답률', val: non.im_err_rate, color: 'bg-rose-400', text: 'text-rose-700' },
         { label: '비우세손 · 약지/새끼 오답률', val: non.rp_err_rate, color: 'bg-rose-600', text: 'text-rose-800' },
       ];
@@ -1566,7 +2693,7 @@
       ];
 
       document.getElementById('res-table-body').innerHTML = rows.map(r => `
-        <tr class="${r.highlight ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'} transition">
+        <tr class="${r.highlight ? 'bg-[#EBF5FF]/55' : 'hover:bg-slate-50/60'} transition">
           <td class="py-3.5 px-4">
             <div class="font-bold text-slate-800">${r.name}</div>
             <div class="text-xs text-slate-500">${r.sub}</div>
@@ -1578,11 +2705,58 @@
       `).join('');
     }
 
+    /* 세로형 진단 카드 PNG 이미지 저장 (html2canvas) */
+    async function saveDiagnosisCardPNG() {
+      SoundFX.playClick();
+      const target = document.getElementById('diagnosis-card-capture');
+      const toast = document.getElementById('card-save-toast');
+      if (!target) return;
+
+      if (typeof html2canvas === 'undefined') {
+        if (toast) {
+          toast.textContent = '이미지 저장 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도하거나 화면을 캡처해 주세요.';
+          toast.className = 'text-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl py-2 px-3 mt-3';
+        }
+        return;
+      }
+
+      try {
+        if (toast) {
+          toast.textContent = '📸 고화질 세로 진단 카드를 생성하는 중...';
+          toast.className = 'text-center text-xs font-bold text-[#004C97] bg-[#EBF5FF] border border-[#79CBF2] rounded-xl py-2 px-3 mt-3';
+        }
+        const canvas = await html2canvas(target, {
+          scale: 2,
+          backgroundColor: null,
+          useCORS: true
+        });
+        const safeId = (state.participantId || 'puang').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+        const link = document.createElement('a');
+        link.download = `puang_neuro_id_${safeId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        if (toast) {
+          toast.textContent = '✓ 세로형 진단 카드가 PNG 이미지로 저장되었습니다!';
+          toast.className = 'text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl py-2 px-3 mt-3';
+        }
+      } catch (err) {
+        console.error('Card Export Error:', err);
+        if (toast) {
+          toast.textContent = '이미지 저장 중 문제가 발생했습니다. 브라우저 화면 캡처를 이용해 주세요.';
+          toast.className = 'text-center text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-xl py-2 px-3 mt-3';
+        }
+      }
+    }
+
     /* 구글 시트 Apps Script 연동 */
     async function uploadToGoogleSheet(payload) {
       const banner = document.getElementById('upload-banner');
       const dot = document.getElementById('upload-status-dot');
       const txt = document.getElementById('upload-status-text');
+      if (!banner || !dot || !txt) return;
 
       if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.trim()) {
         banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50 border-amber-200';
@@ -1591,8 +2765,8 @@
         return;
       }
 
-      banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50 border-indigo-200';
-      dot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse shrink-0';
+      banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#EBF5FF] border-[#79CBF2]';
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-[#004C97] animate-pulse shrink-0';
       txt.textContent = '구글 시트로 실험 데이터를 전송하는 중...';
 
       try {
@@ -1614,14 +2788,9 @@
       }
     }
 
-    document.getElementById('btn-retry-upload').addEventListener('click', () => {
-      if (state.lastPayload) {
-        uploadToGoogleSheet(state.lastPayload);
-      }
-    });
-
     /* 전체 시행 로그 UTF-8 BOM CSV 다운로드 */
-    document.getElementById('btn-download-csv').addEventListener('click', () => {
+    function downloadCsvLogs() {
+      SoundFX.playClick();
       if (!state.trials || state.trials.length === 0) return;
 
       const headers = [
@@ -1643,7 +2812,6 @@
         ...state.trials.map(row => headers.map(h => escapeCsv(row[h])).join(','))
       ];
 
-      // 엑셀 한글 깨짐 방지를 위한 UTF-8 BOM(\uFEFF) 추가
       const bom = '\uFEFF';
       const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -1657,17 +2825,61 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    });
+    }
 
-    /* 새 참가자 측정하기 초기화 */
-    document.getElementById('btn-reset-experiment').addEventListener('click', () => {
+    function resetToStartScreen() {
+      SoundFX.playClick();
       resetState();
-      document.getElementById('input-participant-id').value = '';
+      const input = document.getElementById('input-participant-id');
+      if (input) input.value = '';
       showScreen('screen-start');
-    });
+    }
 
-    /* 초기 상태 세팅 */
-    resetState();
+    /* -----------------------------------------------------------
+       13. 이벤트 바인딩 및 앱 초기화
+    ----------------------------------------------------------- */
+    function bindEvents() {
+      document.getElementById('btn-sound-toggle')?.addEventListener('click', () => SoundFX.toggle());
+      document.getElementById('btn-open-gallery')?.addEventListener('click', openPuangGallery);
+      document.getElementById('btn-close-gallery')?.addEventListener('click', closePuangGallery);
+      document.getElementById('puang-gallery-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'puang-gallery-modal') closePuangGallery();
+      });
+
+      document.getElementById('btn-start-experiment')?.addEventListener('click', startExperimentFromForm);
+      document.getElementById('btn-begin-s1')?.addEventListener('click', startStage1Task);
+      document.getElementById('btn-start-practice')?.addEventListener('click', startPracticeRound);
+      document.getElementById('btn-begin-s2')?.addEventListener('click', startStage2Task);
+      document.getElementById('btn-next-hand')?.addEventListener('click', () => {
+        SoundFX.playClick();
+        openStage1Brief();
+      });
+
+      // 결과 1페이지 <-> 2페이지 전환
+      document.getElementById('btn-go-detail')?.addEventListener('click', () => {
+        SoundFX.playClick();
+        showScreen('screen-results-detail');
+      });
+      document.getElementById('btn-back-to-card')?.addEventListener('click', () => {
+        SoundFX.playClick();
+        showScreen('screen-results-card');
+      });
+
+      document.getElementById('btn-save-card')?.addEventListener('click', saveDiagnosisCardPNG);
+      document.getElementById('btn-retry-upload')?.addEventListener('click', () => {
+        SoundFX.playClick();
+        if (state.lastPayload) uploadToGoogleSheet(state.lastPayload);
+      });
+      document.getElementById('btn-download-csv')?.addEventListener('click', downloadCsvLogs);
+      document.getElementById('btn-reset-from-card')?.addEventListener('click', resetToStartScreen);
+      document.getElementById('btn-reset-experiment')?.addEventListener('click', resetToStartScreen);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      resetState();
+      initStaticGraphics();
+      bindEvents();
+    });
   </script>
 </body>
 </html>
