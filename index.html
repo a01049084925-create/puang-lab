@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>우세손 vs 비우세손 신경 제어 실험</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Pretendard & Inter 폰트 로드 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            labBg: '#f8fafc',
+            labAccent: '#4f46e5',
+            congruent: '#2563eb',
+            incongruent: '#dc2626',
+            goGreen: '#10b981',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* 기본 배경 및 타이포그래피 보정 */
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: 'Pretendard', 'Inter', sans-serif;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 화면 전환 애니메이션 */
+    .screen {
+      display: none;
+      animation: fadeSlideUp 0.25s ease-out forwards;
+    }
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 키캡 3D 스타일 */
+    .keycap {
+      transition: all 0.08s ease;
+      box-shadow: 0 4px 0 #cbd5e1;
+    }
+    .keycap.pressed {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #94a3b8;
+    }
+    .keycap.correct-flash {
+      background-color: #ecfdf5 !important;
+      border-color: #10b981 !important;
+      color: #047857 !important;
+      box-shadow: 0 1px 0 #10b981 !important;
+      transform: translateY(3px);
+    }
+    .keycap.wrong-flash {
+      background-color: #fef2f2 !important;
+      border-color: #dc2626 !important;
+      color: #b91c1c !important;
+      box-shadow: 0 1px 0 #dc2626 !important;
+      transform: translateY(3px);
+    }
+
+    /* 자극 박스 피드백 테두리 */
+    .stimulus-box {
+      transition: border-color 0.1s ease, background-color 0.1s ease, transform 0.1s ease;
+    }
+    .stimulus-box.feedback-correct {
+      border-color: #10b981 !important;
+      background-color: #ecfdf5 !important;
+    }
+    .stimulus-box.feedback-wrong {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2 !important;
+      animation: shake 0.18s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    /* 반응 원형 버튼 펄스 */
+    .pulse-go {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+      animation: pulseGreen 1.2s infinite;
+    }
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+      70% { box-shadow: 0 0 0 22px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* CSS 바 차트 전환 */
+    .bar-fill {
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+
+  <!-- 상단 Lab 헤더 -->
+  <header class="w-full max-w-4xl mb-4 flex items-center justify-between px-1">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Cognitive Motor Lab</p>
+        <h1 class="text-sm sm:text-base font-bold text-slate-800">우세손 vs 비우세손 신경 제어 실험</h1>
+      </div>
+    </div>
+    <span id="header-badge" class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-200/80 text-slate-700">
+      한/영 키보드 상태 무관 작동
+    </span>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="w-full max-w-4xl bg-white rounded-3xl shadow-sm border border-slate-200/90 p-6 sm:p-10">
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 1: 시작 및 설정 화면 -->
+    <!-- ========================================================= -->
+    <section id="screen-start" class="screen active">
+      <div class="text-center mb-8">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-3">
+          단순 운동 vs 화살표·스트룹(Arrow-Stroop) 과제
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
+          손의 차이일까, 뇌와 신경의 차이일까?
+        </h2>
+        <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          양손으로 <strong>1단계(단순 반응)</strong>와 <strong>2단계(화살표·스트룹 인지 협응)</strong>를 각각 측정합니다.
+          인지 부하가 추가될 때 양손의 반응속도, 일관성, 손가락별 오류 패턴이 어떻게 달라지는지 정밀하게 분석합니다.
+        </p>
+      </div>
+
+      <!-- 입력 폼 카드 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+        <!-- 참가자 ID -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+          <label for="input-participant-id" class="block text-sm font-bold text-slate-700 mb-2">
+            참가자 ID 또는 닉네임 <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="input-participant-id"
+            type="text"
+            maxlength="30"
+            placeholder="예: P01 또는 홍길동"
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+          />
+          <p id="id-error-msg" class="hidden text-xs text-red-600 font-semibold mt-1.5">
+            참가자 ID 또는 닉네임을 입력해 주세요.
+          </p>
+        </div>
+
+        <!-- 평소 우세손 -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+          <span class="block text-sm font-bold text-slate-700 mb-2">평소 주로 쓰는 손 (우세손)</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <label class="cursor-pointer">
+              <input type="radio" name="dominantHand" value="right" checked class="peer sr-only" />
+              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                오른손잡이
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="dominantHand" value="left" class="peer sr-only" />
+              <div class="py-2.5 px-3 text-center rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition">
+                왼손잡이
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 측정 순서 선택 -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+          <label for="select-order" class="block text-sm font-bold text-slate-700 mb-2">측정 순서 (순서 효과 통제)</label>
+          <select id="select-order" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="random" selected>자동 무작위 배정 (권장 · 역균형화)</option>
+            <option value="dominant_first">우세손 먼저 측정</option>
+            <option value="nondominant_first">비우세손 먼저 측정</option>
+          </select>
+        </div>
+
+        <!-- 실험 모드 선택 -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+          <label for="select-mode" class="block text-sm font-bold text-slate-700 mb-2">실험 모드</label>
+          <select id="select-mode" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="full" selected>실전 실험 모드 (1단계 10회 · 2단계 32회)</option>
+            <option value="demo">빠른 시연 모드 (1단계 5회 · 2단계 12회)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 키보드 매핑 미리보기 -->
+      <div class="bg-slate-50/80 rounded-2xl border border-slate-200 p-5 mb-7">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-slate-800">키보드 대칭 손가락 배치 안내</h3>
+          <span class="text-xs text-slate-500">데스크톱 / 노트북 키보드 사용 권장</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- 왼손 미리보기 -->
+          <div class="bg-white rounded-xl p-4 border border-slate-200">
+            <p class="text-xs font-bold text-indigo-600 mb-3 text-center">왼손 (Left Hand)</p>
+            <div class="grid grid-cols-4 gap-2 text-center">
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">A</div>
+                <div class="text-sm font-bold text-indigo-600">←</div>
+                <div class="text-[11px] font-medium text-slate-500">새끼</div>
+              </div>
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">S</div>
+                <div class="text-sm font-bold text-indigo-600">↓</div>
+                <div class="text-[11px] font-medium text-slate-500">약지</div>
+              </div>
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">D</div>
+                <div class="text-sm font-bold text-indigo-600">↑</div>
+                <div class="text-[11px] font-medium text-slate-500">중지</div>
+              </div>
+              <div class="keycap bg-indigo-50/60 border border-indigo-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-indigo-800">F</div>
+                <div class="text-sm font-bold text-indigo-600">→</div>
+                <div class="text-[11px] font-bold text-indigo-600">검지(1단계)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 오른손 미리보기 -->
+          <div class="bg-white rounded-xl p-4 border border-slate-200">
+            <p class="text-xs font-bold text-indigo-600 mb-3 text-center">오른손 (Right Hand)</p>
+            <div class="grid grid-cols-4 gap-2 text-center">
+              <div class="keycap bg-indigo-50/60 border border-indigo-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-indigo-800">J</div>
+                <div class="text-sm font-bold text-indigo-600">←</div>
+                <div class="text-[11px] font-bold text-indigo-600">검지(1단계)</div>
+              </div>
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">K</div>
+                <div class="text-sm font-bold text-indigo-600">↓</div>
+                <div class="text-[11px] font-medium text-slate-500">중지</div>
+              </div>
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">L</div>
+                <div class="text-sm font-bold text-indigo-600">↑</div>
+                <div class="text-[11px] font-medium text-slate-500">약지</div>
+              </div>
+              <div class="keycap bg-slate-50 border border-slate-300 rounded-xl py-2 px-1">
+                <div class="text-base font-extrabold text-slate-800">;</div>
+                <div class="text-sm font-bold text-indigo-600">→</div>
+                <div class="text-[11px] font-medium text-slate-500">새끼</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="btn-start-experiment"
+        class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+      >
+        실험 시작하기
+      </button>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 2: 1단계 안내 (손 브리핑) -->
+    <!-- ========================================================= -->
+    <section id="screen-s1-brief" class="screen text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-sm mb-4">
+        <span id="s1-brief-round-badge">1차 측정</span>
+        <span>·</span>
+        <span id="s1-brief-hand-badge">오른손 (우세손)</span>
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+        1단계: 단순 반응속도 테스트
+      </h2>
+      <p class="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">
+        가운데 원이 <strong class="text-emerald-600">초록색</strong>으로 바뀌는 순간,<br />
+        <strong id="s1-brief-hand-text" class="text-indigo-700">오른손 검지</strong>로 지정된 키 하나만 최대한 빠르게 눌러주세요.
+      </p>
+
+      <!-- 1단계 키 강조 카드 -->
+      <div class="max-w-md mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8">
+        <p class="text-xs font-semibold text-slate-500 mb-3">사용할 손가락과 키</p>
+        <div class="flex items-center justify-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-600 keycap flex flex-col items-center justify-center">
+            <span id="s1-brief-key" class="text-2xl font-extrabold text-indigo-700">J</span>
+          </div>
+          <div class="text-left">
+            <p id="s1-brief-key-desc" class="text-base font-bold text-slate-800">오른손 검지 (J 키)</p>
+            <p class="text-xs text-slate-500 mt-0.5">초록색이 뜨기 전에 누르면 부정출발 처리됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="btn-begin-s1"
+        class="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+      >
+        1단계 시작하기 <span class="text-indigo-200 text-sm ml-1">(Space)</span>
+      </button>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 3: 1단계 단순 반응 과제 실행 -->
+    <!-- ========================================================= -->
+    <section id="screen-s1-task" class="screen text-center">
+      <div class="flex items-center justify-between mb-3">
+        <span id="s1-task-hand-label" class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+          오른손 (우세손) · 1단계
+        </span>
+        <span id="s1-progress-text" class="text-sm font-bold text-slate-600">1 / 10</span>
+      </div>
+      <!-- 진행 바 -->
+      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-8">
+        <div id="s1-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width: 0%;"></div>
+      </div>
+
+      <!-- 중앙 반응 원 -->
+      <div class="flex flex-col items-center justify-center py-6">
+        <div
+          id="s1-circle"
+          class="w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-slate-200 text-slate-600 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner"
+        >
+          <span id="s1-circle-main" class="text-2xl sm:text-3xl font-extrabold tracking-tight">기다리세요...</span>
+          <span id="s1-circle-sub" class="text-xs sm:text-sm font-semibold mt-2 opacity-80">초록색이 되면 누르세요</span>
+        </div>
+
+        <!-- 경고 / 피드백 영역 -->
+        <div class="h-10 mt-6 flex items-center justify-center">
+          <p id="s1-feedback-msg" class="text-sm font-bold text-slate-500">
+            지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-extrabold">J</span> (검지)
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 4: 2단계 안내 및 4회 연습 라운드 -->
+    <!-- ========================================================= -->
+    <section id="screen-s2-intro" class="screen text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-sm mb-3">
+        <span id="s2-intro-hand-badge">오른손 (우세손)</span>
+        <span>·</span>
+        <span>2단계 안내 및 연습</span>
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+        2단계: 화살표·스트룹 과제
+      </h2>
+      <p class="text-slate-600 text-sm sm:text-base mb-5">
+        화면의 <strong>화살표 색깔</strong>에 따라 아래 규칙대로 알맞은 손가락 키를 누르세요.
+      </p>
+
+      <!-- 규칙 배너 2개 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-6">
+        <div class="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-200 text-left">
+          <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-extrabold shrink-0">→</div>
+          <div>
+            <p class="text-sm font-extrabold text-blue-800">🔵 파란색 화살표 (일치)</p>
+            <p class="text-xs text-blue-700 mt-0.5">화살표가 가리키는 <strong>방향 그대로</strong> 누르기</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-left">
+          <div class="w-11 h-11 rounded-xl bg-red-600 text-white flex items-center justify-center text-xl font-extrabold shrink-0">→</div>
+          <div>
+            <p class="text-sm font-extrabold text-red-800">🔴 빨간색 화살표 (불일치)</p>
+            <p class="text-xs text-red-700 mt-0.5">화살표의 <strong>정반대 방향</strong> 누르기 (←↔→, ↑↔↓)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 연습 라운드 영역 -->
+      <div id="practice-container" class="max-w-xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-slate-600">비기록 연습 라운드 (4회)</span>
+          <span id="practice-progress" class="text-xs font-bold text-indigo-600">준비 중</span>
+        </div>
+
+        <!-- 연습 자극 박스 -->
+        <div id="practice-stimulus-box" class="stimulus-box h-32 rounded-2xl bg-white border-2 border-slate-200 flex flex-col items-center justify-center mb-3">
+          <button
+            id="btn-start-practice"
+            class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-sm transition cursor-pointer"
+          >
+            4회 연습 시작하기 (Space)
+          </button>
+          <div id="practice-arrow-display" class="hidden flex items-center justify-center"></div>
+        </div>
+
+        <p id="practice-feedback" class="text-xs font-bold text-slate-500 h-5">
+          4개 손가락을 아래 키 위에 올려두고 연습을 시작하세요.
+        </p>
+      </div>
+
+      <!-- 활성 손 4키 슬롯 (연습용) -->
+      <div id="s2-intro-keyslots" class="grid grid-cols-4 gap-2.5 max-w-md mx-auto mb-6"></div>
+
+      <!-- 연습 완료 후 본 실험 시작 버튼 -->
+      <button
+        id="btn-begin-s2"
+        class="hidden px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-md shadow-emerald-200 transition cursor-pointer"
+      >
+        연습 완료! 2단계 본 실험 시작하기 <span class="text-emerald-100 text-sm ml-1">(Space)</span>
+      </button>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 5: 2단계 화살표·스트룹 본 실험 -->
+    <!-- ========================================================= -->
+    <section id="screen-s2-task" class="screen text-center">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <span id="s2-task-hand-label" class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+          오른손 (우세손) · 2단계
+        </span>
+        <!-- 규칙 리마인더 배지 -->
+        <span class="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+          🔵 파랑: 그대로 &nbsp;|&nbsp; 🔴 빨강: 반대로
+        </span>
+        <span id="s2-progress-text" class="text-sm font-bold text-slate-600">1 / 32</span>
+      </div>
+
+      <!-- 진행 바 -->
+      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-8">
+        <div id="s2-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-200" style="width: 0%;"></div>
+      </div>
+
+      <!-- 중앙 자극 영역 -->
+      <div
+        id="s2-stimulus-box"
+        class="stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center mb-8 relative"
+      >
+        <div id="s2-stimulus-content" class="flex items-center justify-center">
+          <span class="text-4xl font-light text-slate-400">+</span>
+        </div>
+        <!-- 피드백 오버레이 아이콘 -->
+        <div id="s2-feedback-icon" class="hidden absolute top-3 right-4 text-lg font-extrabold"></div>
+      </div>
+
+      <!-- 하단 4개 시각적 키 슬롯 -->
+      <div id="s2-task-keyslots" class="grid grid-cols-4 gap-3 max-w-md mx-auto"></div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 6: 손 교대 휴식 화면 -->
+    <!-- ========================================================= -->
+    <section id="screen-break" class="screen text-center py-6">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-5">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+        </svg>
+      </div>
+      <span class="inline-block px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-3">
+        1차 측정 완료!
+      </span>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+        잠시 휴식 후 반대쪽 손을 측정합니다
+      </h2>
+      <p id="break-next-hand-desc" class="text-slate-600 text-sm sm:text-base mb-8">
+        다음은 <strong class="text-indigo-700">왼손 (비우세손)</strong> 차례입니다. 손목을 가볍게 풀어주세요.
+      </p>
+
+      <div class="mb-8">
+        <div class="text-5xl font-extrabold text-indigo-600 tabular-nums" id="break-timer">10</div>
+        <p class="text-xs text-slate-500 mt-1">권장 휴식 카운트다운 (초)</p>
+      </div>
+
+      <button
+        id="btn-next-hand"
+        class="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-md shadow-indigo-200 transition cursor-pointer"
+      >
+        바로 다음 손 시작하기
+      </button>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- SCREEN 7: 결과 분석 대시보드 및 내보내기 -->
+    <!-- ========================================================= -->
+    <section id="screen-results" class="screen">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <span class="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-1.5">
+            실험 완료 · 신경 제어 프로파일 리포트
+          </span>
+          <h2 class="text-2xl font-extrabold text-slate-900">
+            <span id="res-participant-name" class="text-indigo-600">참가자</span> 님의 양손 분석 결과
+          </h2>
+          <p id="res-meta-info" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            id="btn-download-csv"
+            class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition cursor-pointer flex items-center gap-1.5"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            전체 로그 CSV 다운로드
+          </button>
+          <button
+            id="btn-reset-experiment"
+            class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition cursor-pointer"
+          >
+            새 참가자 측정하기
+          </button>
+        </div>
+      </div>
+
+      <!-- 구글 시트 업로드 상태 배너 -->
+      <div id="upload-banner" class="mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border-slate-200">
+        <div class="flex items-center gap-2.5">
+          <span id="upload-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
+          <p id="upload-status-text" class="text-xs sm:text-sm font-semibold text-slate-700">구글 시트 연동 상태 확인 중...</p>
+        </div>
+        <button
+          id="btn-retry-upload"
+          class="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 transition cursor-pointer shrink-0"
+        >
+          구글 시트 다시 전송
+        </button>
+      </div>
+
+      <!-- 핵심 인사이트 요약 박스 -->
+      <div id="res-insight-box" class="mb-6 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-sm text-indigo-950 leading-relaxed"></div>
+
+      <!-- 시각적 CSS 바 차트 섹션 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-7">
+        <!-- 차트 1: 반응속도 및 순수 뇌 처리 시간(ΔRT) 비교 -->
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+          <h3 class="text-sm font-extrabold text-slate-800 mb-1">1단계 vs 2단계 & 순수 뇌 처리 시간 (ΔRT)</h3>
+          <p class="text-xs text-slate-500 mb-4">돈더스 감산법: 2단계 정답 평균 - 1단계 평균 (ms)</p>
+          <div id="chart-rt-bars" class="space-y-4"></div>
+        </div>
+
+        <!-- 차트 2: 손가락별 해상도 (오답률 비교) -->
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+          <h3 class="text-sm font-extrabold text-slate-800 mb-1">손가락별 뇌 지도 해상도 (오답률 %)</h3>
+          <p class="text-xs text-slate-500 mb-4">검지·중지(독립성 높음) vs 약지·새끼(신경 간섭 취약)</p>
+          <div id="chart-finger-bars" class="space-y-4"></div>
+        </div>
+      </div>
+
+      <!-- 상세 비교 테이블 -->
+      <div class="overflow-x-auto rounded-2xl border border-slate-200">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider">
+              <th class="py-3.5 px-4 font-extrabold">분석 지표 (심리·신경과학 개념)</th>
+              <th class="py-3.5 px-4 font-extrabold text-center text-indigo-700">우세손 (<span id="th-dom-hand">오른손</span>)</th>
+              <th class="py-3.5 px-4 font-extrabold text-center text-rose-700">비우세손 (<span id="th-non-hand">왼손</span>)</th>
+              <th class="py-3.5 px-4 font-extrabold text-center">격차 (비우세 - 우세)</th>
+            </tr>
+          </thead>
+          <tbody id="res-table-body" class="divide-y divide-slate-200 bg-white text-slate-800">
+            <!-- JS로 동적 생성 -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mt-5 text-center text-xs text-slate-400">
+    고정밀 타이머(performance.now) · 한/영 무관 키코드(e.code) · Fisher-Yates 균등 셔플 적용
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- JAVASCRIPT 실험 엔진 -->
+  <!-- ========================================================= -->
+  <script>
+    const GOOGLE_SCRIPT_URL = ""; // 여기에 Google Apps Script 웹 앱 URL을 붙여넣으세요
+
+    /* -----------------------------------------------------------
+       1. 상수 및 손가락/키보드 대칭 매핑 정의
+       - e.code를 사용해 한글 IME 상태에서도 오류 없이 인식합니다.
+    ----------------------------------------------------------- */
+    const HAND_CONFIG = {
+      left: {
+        label: '왼손',
+        indexCode: 'KeyF',
+        indexKeyLabel: 'F',
+        keys: [
+          { code: 'KeyA', keyLabel: 'A', dir: 'left',  arrow: '←', finger: '새끼', group: 'rp' },
+          { code: 'KeyS', keyLabel: 'S', dir: 'down',  arrow: '↓', finger: '약지', group: 'rp' },
+          { code: 'KeyD', keyLabel: 'D', dir: 'up',    arrow: '↑', finger: '중지', group: 'im' },
+          { code: 'KeyF', keyLabel: 'F', dir: 'right', arrow: '→', finger: '검지', group: 'im' },
+        ]
+      },
+      right: {
+        label: '오른손',
+        indexCode: 'KeyJ',
+        indexKeyLabel: 'J',
+        keys: [
+          { code: 'KeyJ',      keyLabel: 'J', dir: 'left',  arrow: '←', finger: '검지', group: 'im' },
+          { code: 'KeyK',      keyLabel: 'K', dir: 'down',  arrow: '↓', finger: '중지', group: 'im' },
+          { code: 'KeyL',      keyLabel: 'L', dir: 'up',    arrow: '↑', finger: '약지', group: 'rp' },
+          { code: 'Semicolon', keyLabel: ';', dir: 'right', arrow: '→', finger: '새끼', group: 'rp' },
+        ]
+      }
+    };
+
+    const OPPOSITE_DIR = {
+      left: 'right',
+      right: 'left',
+      up: 'down',
+      down: 'up'
+    };
+
+    const DIR_TO_ARROW = {
+      left: '←',
+      down: '↓',
+      up: '↑',
+      right: '→'
+    };
+
+    const MODE_CONFIG = {
+      full: { s1Trials: 10, s2Trials: 32, label: '실전 실험 모드' },
+      demo: { s1Trials: 5,  s2Trials: 12, label: '빠른 시연 모드' }
+    };
+
+    /* 선명한 기하학적 화살표 SVG 생성 */
+    function getArrowSVG(dir, colorHex, sizePx = 112) {
+      const rotation = { right: 0, down: 90, left: 180, up: 270 }[dir] || 0;
+      return `
+        <svg width="${sizePx}" height="${sizePx}" viewBox="0 0 100 100" style="transform: rotate(${rotation}deg);" aria-label="${DIR_TO_ARROW[dir]}">
+          <path d="M16 50 H78 M54 24 L82 50 L54 76" fill="none" stroke="${colorHex}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+    }
+
+    /* -----------------------------------------------------------
+       2. 전역 실험 상태 관리
+    ----------------------------------------------------------- */
+    let state = {};
+
+    function resetState() {
+      clearAllTimers();
+      state = {
+        screen: 'screen-start',
+        participantId: '',
+        dominantHand: 'right',
+        firstTestedHand: 'right',
+        handOrder: ['right', 'left'],
+        currentHandIdx: 0, // 0: 첫 번째 손, 1: 두 번째 손
+        mode: 'full',
+
+        // 1단계 상태
+        s1TrialIdx: 0,
+        s1Phase: 'idle', // idle | waiting | go | feedback
+        s1StimulusTime: 0,
+
+        // 2단계 연습 상태
+        practiceTrials: [],
+        practiceIdx: 0,
+        practiceActive: false,
+        practiceWaitingKey: false,
+
+        // 2단계 본 실험 상태
+        s2Trials: [],
+        s2TrialIdx: 0,
+        s2Phase: 'idle', // idle | fixation | stimulus | feedback
+        s2StimulusTime: 0,
+        s2PrevError: 0,
+
+        // 타이머 핸들
+        timers: [],
+        breakInterval: null,
+
+        // 수집된 전체 시행 데이터 및 최종 페이로드
+        trials: [],
+        lastPayload: null
+      };
+    }
+
+    function addTimer(fn, delay) {
+      const id = setTimeout(() => {
+        state.timers = state.timers.filter(t => t !== id);
+        fn();
+      }, delay);
+      state.timers.push(id);
+      return id;
+    }
+
+    function clearAllTimers() {
+      if (state && state.timers) {
+        state.timers.forEach(id => clearTimeout(id));
+        state.timers = [];
+      }
+      if (state && state.breakInterval) {
+        clearInterval(state.breakInterval);
+        state.breakInterval = null;
+      }
+    }
+
+    /* 현재 측정 중인 손 정보 헬퍼 */
+    function getCurrentHand() {
+      const hand = state.handOrder[state.currentHandIdx];
+      const isDom = hand === state.dominantHand;
+      return {
+        hand,
+        config: HAND_CONFIG[hand],
+        handType: isDom ? 'dominant' : 'nondominant',
+        handTypeKo: isDom ? '우세손' : '비우세손',
+        roundKo: state.currentHandIdx === 0 ? '1차 측정' : '2차 측정'
+      };
+    }
+
+    /* 화면 전환 */
+    function showScreen(screenId) {
+      clearAllTimers();
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add('active');
+      state.screen = screenId;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* Fisher-Yates 셔플 */
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    /* -----------------------------------------------------------
+       3. 2단계 균형 자극 목록 생성
+       - Full(32회): 4방향 x 8회 (일치 파랑 4 + 불일치 빨강 4)
+       - Demo(12회): 4방향 x 3회 (전체 파랑 6 + 빨강 6 균형 배정)
+    ----------------------------------------------------------- */
+    function generateStage2Trials(mode) {
+      const dirs = ['left', 'down', 'up', 'right'];
+      const list = [];
+
+      if (mode === 'full') {
+        dirs.forEach(targetDir => {
+          for (let i = 0; i < 4; i++) {
+            list.push({ targetDir, condition: 'congruent', stimulusDir: targetDir });
+          }
+          for (let i = 0; i < 4; i++) {
+            list.push({ targetDir, condition: 'incongruent', stimulusDir: OPPOSITE_DIR[targetDir] });
+          }
+        });
+      } else {
+        // Demo 12회: 각 방향 3회씩, 파랑 6회 / 빨강 6회 균형
+        const shuffledDirs = shuffle(dirs);
+        shuffledDirs.forEach((targetDir, idx) => {
+          const blueCount = idx < 2 ? 2 : 1;
+          const redCount = 3 - blueCount;
+          for (let i = 0; i < blueCount; i++) {
+            list.push({ targetDir, condition: 'congruent', stimulusDir: targetDir });
+          }
+          for (let i = 0; i < redCount; i++) {
+            list.push({ targetDir, condition: 'incongruent', stimulusDir: OPPOSITE_DIR[targetDir] });
+          }
+        });
+      }
+      return shuffle(list);
+    }
+
+    /* 4회 연습 목록 생성 (파랑 2, 빨강 2, 4방향 골고루) */
+    function generatePracticeTrials() {
+      const dirs = shuffle(['left', 'down', 'up', 'right']);
+      return shuffle([
+        { targetDir: dirs[0], condition: 'congruent',   stimulusDir: dirs[0] },
+        { targetDir: dirs[1], condition: 'congruent',   stimulusDir: dirs[1] },
+        { targetDir: dirs[2], condition: 'incongruent', stimulusDir: OPPOSITE_DIR[dirs[2]] },
+        { targetDir: dirs[3], condition: 'incongruent', stimulusDir: OPPOSITE_DIR[dirs[3]] }
+      ]);
+    }
+
+    /* 4개 키 슬롯 렌더링 */
+    function renderKeySlots(containerId, handKey) {
+      const container = document.getElementById(containerId);
+      const keys = HAND_CONFIG[handKey].keys;
+      container.innerHTML = keys.map(k => `
+        <div data-code="${k.code}" class="keycap bg-white border-2 border-slate-300 rounded-2xl py-3 px-2 text-center select-none">
+          <div class="text-lg font-extrabold text-slate-900 leading-none">${k.keyLabel}</div>
+          <div class="text-xl font-black text-indigo-600 my-1 leading-none">${k.arrow}</div>
+          <div class="text-xs font-semibold text-slate-500">${k.finger}</div>
+        </div>
+      `).join('');
+    }
+
+    /* 눌린 키 슬롯 하이라이트 */
+    function flashKeySlot(containerId, code, type) {
+      const el = document.querySelector(`#${containerId} [data-code="${code}"]`);
+      if (!el) return;
+      const cls = type === 'correct' ? 'correct-flash' : (type === 'wrong' ? 'wrong-flash' : 'pressed');
+      el.classList.add(cls);
+      setTimeout(() => el.classList.remove(cls), 190);
+    }
+
+    /* -----------------------------------------------------------
+       4. Screen 1 -> Screen 2: 실험 시작 로직
+    ----------------------------------------------------------- */
+    document.getElementById('btn-start-experiment').addEventListener('click', () => {
+      const idInput = document.getElementById('input-participant-id');
+      const errMsg = document.getElementById('id-error-msg');
+      const pid = idInput.value.trim();
+
+      if (!pid) {
+        errMsg.classList.remove('hidden');
+        idInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+        idInput.focus();
+        return;
+      }
+
+      errMsg.classList.add('hidden');
+      idInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+
+      const domHand = document.querySelector('input[name="dominantHand"]:checked').value;
+      const nonDomHand = domHand === 'right' ? 'left' : 'right';
+      const orderChoice = document.getElementById('select-order').value;
+      const modeChoice = document.getElementById('select-mode').value;
+
+      let handOrder;
+      if (orderChoice === 'dominant_first') {
+        handOrder = [domHand, nonDomHand];
+      } else if (orderChoice === 'nondominant_first') {
+        handOrder = [nonDomHand, domHand];
+      } else {
+        handOrder = Math.random() < 0.5 ? [domHand, nonDomHand] : [nonDomHand, domHand];
+      }
+
+      resetState();
+      state.participantId = pid;
+      state.dominantHand = domHand;
+      state.firstTestedHand = handOrder[0];
+      state.handOrder = handOrder;
+      state.currentHandIdx = 0;
+      state.mode = modeChoice;
+
+      openStage1Brief();
+    });
+
+    /* -----------------------------------------------------------
+       5. Screen 2 -> Screen 3: 1단계 단순 반응 과제
+    ----------------------------------------------------------- */
+    function openStage1Brief() {
+      const info = getCurrentHand();
+      document.getElementById('s1-brief-round-badge').textContent = info.roundKo;
+      document.getElementById('s1-brief-hand-badge').textContent = `${info.config.label} (${info.handTypeKo})`;
+      document.getElementById('s1-brief-hand-text').textContent = `${info.config.label} 검지`;
+      document.getElementById('s1-brief-key').textContent = info.config.indexKeyLabel;
+      document.getElementById('s1-brief-key-desc').textContent = `${info.config.label} 검지 (${info.config.indexKeyLabel} 키)`;
+      showScreen('screen-s1-brief');
+    }
+
+    document.getElementById('btn-begin-s1').addEventListener('click', startStage1Task);
+
+    function startStage1Task() {
+      const info = getCurrentHand();
+      state.s1TrialIdx = 0;
+      state.s1Phase = 'idle';
+
+      document.getElementById('s1-task-hand-label').textContent = `${info.config.label} (${info.handTypeKo}) · 1단계 단순 반응`;
+
+      showScreen('screen-s1-task');
+      runNextStage1Trial();
+    }
+
+    function runNextStage1Trial() {
+      const total = MODE_CONFIG[state.mode].s1Trials;
+      if (state.s1TrialIdx >= total) {
+        openStage2Intro();
+        return;
+      }
+
+      const info = getCurrentHand();
+      document.getElementById('s1-progress-text').textContent = `${state.s1TrialIdx + 1} / ${total}`;
+      document.getElementById('s1-progress-bar').style.width = `${(state.s1TrialIdx / total) * 100}%`;
+
+      const circle = document.getElementById('s1-circle');
+      const mainTxt = document.getElementById('s1-circle-main');
+      const subTxt = document.getElementById('s1-circle-sub');
+      const fb = document.getElementById('s1-feedback-msg');
+
+      circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-slate-200 text-slate-600 flex flex-col items-center justify-center transition-colors duration-100 shadow-inner';
+      mainTxt.textContent = '기다리세요...';
+      subTxt.textContent = `초록색이 뜨면 ${info.config.indexKeyLabel} 키를 누르세요`;
+      fb.innerHTML = `지정 키: <span id="s1-active-key-badge" class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-extrabold">${info.config.indexKeyLabel}</span> (${info.config.label} 검지)`;
+      fb.className = 'text-sm font-bold text-slate-500';
+
+      state.s1Phase = 'waiting';
+      const delay = 1200 + Math.random() * 1600; // 1200ms ~ 2800ms
+
+      addTimer(() => {
+        if (state.screen !== 'screen-s1-task' || state.s1Phase !== 'waiting') return;
+        state.s1Phase = 'go';
+        state.s1StimulusTime = performance.now();
+
+        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center transition-colors duration-75 shadow-lg pulse-go';
+        mainTxt.textContent = '누르세요!';
+        subTxt.textContent = `${info.config.indexKeyLabel} 키`;
+      }, delay);
+    }
+
+    function handleStage1Key(e) {
+      const info = getCurrentHand();
+      if (e.code !== info.config.indexCode) return;
+
+      const circle = document.getElementById('s1-circle');
+      const mainTxt = document.getElementById('s1-circle-main');
+      const subTxt = document.getElementById('s1-circle-sub');
+      const fb = document.getElementById('s1-feedback-msg');
+
+      if (state.s1Phase === 'waiting') {
+        // 부정출발 처리: 기록하지 않고 타이머 재시작
+        clearAllTimers();
+        state.s1Phase = 'feedback';
+        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-red-500 text-white flex flex-col items-center justify-center shadow-md';
+        mainTxt.textContent = '부정출발!';
+        subTxt.textContent = '다시 대기합니다';
+        fb.textContent = '너무 빨랐습니다! 초록색이 뜬 뒤 눌러주세요.';
+        fb.className = 'text-sm font-bold text-red-600';
+
+        addTimer(() => {
+          runNextStage1Trial();
+        }, 1100);
+      } else if (state.s1Phase === 'go') {
+        const rt = performance.now() - state.s1StimulusTime;
+        const rtRounded = Number(rt.toFixed(1));
+        state.s1Phase = 'feedback';
+
+        // 시행 기록
+        state.trials.push({
+          participantId: state.participantId,
+          dominantHand: state.dominantHand,
+          testedHand: info.hand,
+          handType: info.handType,
+          stage: 1,
+          trialNum: state.s1TrialIdx + 1,
+          condition: 'simple',
+          stimulusArrow: 'GO',
+          targetFinger: '검지',
+          pressedFinger: '검지',
+          isCorrect: 1,
+          rtMs: rtRounded,
+          prevError: 0
+        });
+
+        state.s1TrialIdx += 1;
+        const total = MODE_CONFIG[state.mode].s1Trials;
+        document.getElementById('s1-progress-bar').style.width = `${(state.s1TrialIdx / total) * 100}%`;
+
+        circle.className = 'w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-emerald-100 border-4 border-emerald-500 text-emerald-700 flex flex-col items-center justify-center';
+        mainTxt.textContent = `${Math.round(rt)} ms`;
+        subTxt.textContent = '기록 완료';
+
+        addTimer(() => {
+          runNextStage1Trial();
+        }, 420);
+      }
+    }
+
+    /* -----------------------------------------------------------
+       6. Screen 4: 2단계 안내 + 4회 비기록 연습 라운드
+    ----------------------------------------------------------- */
+    function openStage2Intro() {
+      const info = getCurrentHand();
+      document.getElementById('s2-intro-hand-badge').textContent = `${info.config.label} (${info.handTypeKo})`;
+      renderKeySlots('s2-intro-keyslots', info.hand);
+
+      state.practiceTrials = generatePracticeTrials();
+      state.practiceIdx = 0;
+      state.practiceActive = false;
+      state.practiceWaitingKey = false;
+
+      document.getElementById('practice-progress').textContent = '준비 중 (0 / 4)';
+      document.getElementById('btn-start-practice').classList.remove('hidden');
+      document.getElementById('practice-arrow-display').classList.add('hidden');
+      document.getElementById('practice-arrow-display').innerHTML = '';
+      document.getElementById('practice-stimulus-box').className = 'stimulus-box h-32 rounded-2xl bg-white border-2 border-slate-200 flex flex-col items-center justify-center mb-3';
+      document.getElementById('practice-feedback').textContent = '4개 손가락을 아래 키 위에 올려두고 연습을 시작하세요.';
+      document.getElementById('practice-feedback').className = 'text-xs font-bold text-slate-500 h-5';
+      document.getElementById('btn-begin-s2').classList.add('hidden');
+
+      showScreen('screen-s2-intro');
+    }
+
+    document.getElementById('btn-start-practice').addEventListener('click', startPracticeRound);
+    document.getElementById('btn-begin-s2').addEventListener('click', startStage2Task);
+
+    function startPracticeRound() {
+      if (state.practiceActive) return;
+      state.practiceActive = true;
+      state.practiceIdx = 0;
+      document.getElementById('btn-start-practice').classList.add('hidden');
+      document.getElementById('practice-arrow-display').classList.remove('hidden');
+      showNextPracticeTrial();
+    }
+
+    function showNextPracticeTrial() {
+      if (state.practiceIdx >= state.practiceTrials.length) {
+        state.practiceActive = false;
+        state.practiceWaitingKey = false;
+        document.getElementById('practice-progress').textContent = '연습 완료 (4 / 4)';
+        document.getElementById('practice-arrow-display').innerHTML = '<span class="text-base font-extrabold text-emerald-600">✓ 4회 연습을 모두 마쳤습니다!</span>';
+        document.getElementById('practice-feedback').textContent = '준비되셨다면 아래 버튼을 누르거나 Space 키로 본 실험을 시작하세요.';
+        document.getElementById('practice-feedback').className = 'text-xs font-bold text-emerald-700 h-5';
+        document.getElementById('btn-begin-s2').classList.remove('hidden');
+        return;
+      }
+
+      const trial = state.practiceTrials[state.practiceIdx];
+      const box = document.getElementById('practice-stimulus-box');
+      const disp = document.getElementById('practice-arrow-display');
+      const fb = document.getElementById('practice-feedback');
+
+      document.getElementById('practice-progress').textContent = `연습 중 (${state.practiceIdx + 1} / 4)`;
+      box.className = 'stimulus-box h-32 rounded-2xl bg-white border-2 border-slate-200 flex flex-col items-center justify-center mb-3';
+      disp.innerHTML = '<span class="text-3xl text-slate-300">+</span>';
+      fb.textContent = '화살표 색깔을 잘 확인하세요...';
+      fb.className = 'text-xs font-bold text-slate-400 h-5';
+      state.practiceWaitingKey = false;
+
+      addTimer(() => {
+        if (state.screen !== 'screen-s2-intro' || !state.practiceActive) return;
+        const colorHex = trial.condition === 'congruent' ? '#2563eb' : '#dc2626';
+        disp.innerHTML = getArrowSVG(trial.stimulusDir, colorHex, 86);
+        fb.textContent = trial.condition === 'congruent' ? '🔵 파랑: 보이는 방향 그대로!' : '🔴 빨강: 정반대 방향으로!';
+        fb.className = trial.condition === 'congruent' ? 'text-xs font-bold text-blue-600 h-5' : 'text-xs font-bold text-red-600 h-5';
+        state.practiceWaitingKey = true;
+      }, 450);
+    }
+
+    function handlePracticeKey(e) {
+      if (!state.practiceWaitingKey) return;
+      const info = getCurrentHand();
+      const keyObj = info.config.keys.find(k => k.code === e.code);
+      if (!keyObj) return;
+
+      state.practiceWaitingKey = false;
+      const trial = state.practiceTrials[state.practiceIdx];
+      const isCorrect = keyObj.dir === trial.targetDir;
+      const box = document.getElementById('practice-stimulus-box');
+      const fb = document.getElementById('practice-feedback');
+      const correctKeyObj = info.config.keys.find(k => k.dir === trial.targetDir);
+
+      flashKeySlot('s2-intro-keyslots', e.code, isCorrect ? 'correct' : 'wrong');
+
+      if (isCorrect) {
+        box.classList.add('feedback-correct');
+        fb.textContent = `정답입니다! (${keyObj.finger} · ${keyObj.arrow})`;
+        fb.className = 'text-xs font-bold text-emerald-600 h-5';
+      } else {
+        box.classList.add('feedback-wrong');
+        fb.textContent = `아쉬워요! 정답은 [${correctKeyObj.keyLabel} · ${correctKeyObj.arrow} (${correctKeyObj.finger})] 입니다.`;
+        fb.className = 'text-xs font-bold text-red-600 h-5';
+      }
+
+      state.practiceIdx += 1;
+      addTimer(() => {
+        showNextPracticeTrial();
+      }, 650);
+    }
+
+    /* -----------------------------------------------------------
+       7. Screen 5: 2단계 화살표·스트룹 본 실험
+    ----------------------------------------------------------- */
+    function startStage2Task() {
+      const info = getCurrentHand();
+      state.s2Trials = generateStage2Trials(state.mode);
+      state.s2TrialIdx = 0;
+      state.s2Phase = 'idle';
+      state.s2PrevError = 0;
+
+      document.getElementById('s2-task-hand-label').textContent = `${info.config.label} (${info.handTypeKo}) · 2단계 화살표·스트룹`;
+      renderKeySlots('s2-task-keyslots', info.hand);
+
+      showScreen('screen-s2-task');
+      runNextStage2Trial();
+    }
+
+    function runNextStage2Trial() {
+      const total = state.s2Trials.length;
+      if (state.s2TrialIdx >= total) {
+        finishCurrentHand();
+        return;
+      }
+
+      document.getElementById('s2-progress-text').textContent = `${state.s2TrialIdx + 1} / ${total}`;
+      document.getElementById('s2-progress-bar').style.width = `${(state.s2TrialIdx / total) * 100}%`;
+
+      const box = document.getElementById('s2-stimulus-box');
+      const content = document.getElementById('s2-stimulus-content');
+      const fbIcon = document.getElementById('s2-feedback-icon');
+
+      box.className = 'stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-slate-50 border-4 border-slate-200 flex items-center justify-center mb-8 relative';
+      content.innerHTML = '<span class="text-5xl font-light text-slate-400">+</span>';
+      fbIcon.classList.add('hidden');
+
+      state.s2Phase = 'fixation';
+      const fixationDelay = 450 + Math.random() * 200; // 450ms ~ 650ms
+
+      addTimer(() => {
+        if (state.screen !== 'screen-s2-task' || state.s2Phase !== 'fixation') return;
+        const trial = state.s2Trials[state.s2TrialIdx];
+        const colorHex = trial.condition === 'congruent' ? '#2563eb' : '#dc2626';
+
+        box.className = 'stimulus-box max-w-md mx-auto h-52 sm:h-56 rounded-3xl bg-white border-4 border-slate-200 flex items-center justify-center mb-8 relative shadow-sm';
+        content.innerHTML = getArrowSVG(trial.stimulusDir, colorHex, 124);
+
+        state.s2Phase = 'stimulus';
+        state.s2StimulusTime = performance.now();
+      }, fixationDelay);
+    }
+
+    function handleStage2Key(e) {
+      if (state.s2Phase !== 'stimulus') return;
+      const info = getCurrentHand();
+      const pressedKeyObj = info.config.keys.find(k => k.code === e.code);
+      if (!pressedKeyObj) return;
+
+      const rt = performance.now() - state.s2StimulusTime;
+      const rtRounded = Number(rt.toFixed(1));
+      state.s2Phase = 'feedback';
+
+      const trial = state.s2Trials[state.s2TrialIdx];
+      const targetKeyObj = info.config.keys.find(k => k.dir === trial.targetDir);
+      const isCorrect = pressedKeyObj.dir === trial.targetDir ? 1 : 0;
+
+      // 시행 로그 저장 (정확한 키 스키마 유지)
+      state.trials.push({
+        participantId: state.participantId,
+        dominantHand: state.dominantHand,
+        testedHand: info.hand,
+        handType: info.handType,
+        stage: 2,
+        trialNum: state.s2TrialIdx + 1,
+        condition: trial.condition,
+        stimulusArrow: DIR_TO_ARROW[trial.stimulusDir],
+        targetFinger: targetKeyObj.finger,
+        pressedFinger: pressedKeyObj.finger,
+        isCorrect: isCorrect,
+        rtMs: rtRounded,
+        prevError: state.s2PrevError
+      });
+
+      // 다음 시행을 위해 현재 오답 여부 갱신 (오류 후 지연 PES 분석용)
+      state.s2PrevError = isCorrect === 0 ? 1 : 0;
+
+      // 180ms 즉각 시각 피드백
+      const box = document.getElementById('s2-stimulus-box');
+      const fbIcon = document.getElementById('s2-feedback-icon');
+      flashKeySlot('s2-task-keyslots', e.code, isCorrect ? 'correct' : 'wrong');
+
+      if (isCorrect) {
+        box.classList.add('feedback-correct');
+        fbIcon.textContent = '✓';
+        fbIcon.className = 'absolute top-3 right-4 text-2xl font-extrabold text-emerald-600';
+      } else {
+        box.classList.add('feedback-wrong');
+        fbIcon.textContent = '✕';
+        fbIcon.className = 'absolute top-3 right-4 text-2xl font-extrabold text-red-600';
+      }
+
+      state.s2TrialIdx += 1;
+      const total = state.s2Trials.length;
+      document.getElementById('s2-progress-bar').style.width = `${(state.s2TrialIdx / total) * 100}%`;
+
+      addTimer(() => {
+        runNextStage2Trial();
+      }, 180);
+    }
+
+    /* -----------------------------------------------------------
+       8. Screen 6: 손 교대 휴식 화면 또는 결과 화면 이동
+    ----------------------------------------------------------- */
+    function finishCurrentHand() {
+      if (state.currentHandIdx === 0) {
+        state.currentHandIdx = 1;
+        openBreakScreen();
+      } else {
+        openResultsScreen();
+      }
+    }
+
+    function openBreakScreen() {
+      const nextInfo = getCurrentHand();
+      document.getElementById('break-next-hand-desc').innerHTML =
+        `다음은 <strong class="text-indigo-700">${nextInfo.config.label} (${nextInfo.handTypeKo})</strong> 차례입니다. 손목을 가볍게 풀어주세요.`;
+
+      let remain = 10;
+      const timerEl = document.getElementById('break-timer');
+      timerEl.textContent = remain;
+      showScreen('screen-break');
+
+      state.breakInterval = setInterval(() => {
+        remain -= 1;
+        if (remain <= 0) {
+          timerEl.textContent = '준비 완료!';
+          clearInterval(state.breakInterval);
+          state.breakInterval = null;
+        } else {
+          timerEl.textContent = remain;
+        }
+      }, 1000);
+    }
+
+    document.getElementById('btn-next-hand').addEventListener('click', () => {
+      openStage1Brief();
+    });
+
+    /* -----------------------------------------------------------
+       9. 전역 키보드 리스너 (e.code 기반 · e.repeat 차단)
+    ----------------------------------------------------------- */
+    window.addEventListener('keydown', (e) => {
+      // 텍스트 입력 중에는 단축키 무시
+      if (document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        return;
+      }
+
+      if (e.repeat) return;
+
+      // 스페이스바 스크롤 방지 및 화면별 시작 트리거
+      if (e.code === 'Space') {
+        if (state.screen !== 'screen-start' && state.screen !== 'screen-results') {
+          e.preventDefault();
+        }
+        if (state.screen === 'screen-s1-brief') {
+          startStage1Task();
+          return;
+        }
+        if (state.screen === 'screen-s2-intro') {
+          const btnPractice = document.getElementById('btn-start-practice');
+          const btnBeginS2 = document.getElementById('btn-begin-s2');
+          if (!btnPractice.classList.contains('hidden')) {
+            startPracticeRound();
+          } else if (!btnBeginS2.classList.contains('hidden')) {
+            startStage2Task();
+          }
+          return;
+        }
+        return;
+      }
+
+      if (state.screen === 'screen-s1-task') {
+        handleStage1Key(e);
+      } else if (state.screen === 'screen-s2-intro') {
+        handlePracticeKey(e);
+      } else if (state.screen === 'screen-s2-task') {
+        handleStage2Key(e);
+      }
+    });
+
+    /* -----------------------------------------------------------
+       10. 통계 분석 엔진 (7대 신경·심리학 지표 계산)
+    ----------------------------------------------------------- */
+    function mean(arr) {
+      if (!arr || arr.length === 0) return null;
+      return arr.reduce((sum, v) => sum + v, 0) / arr.length;
+    }
+
+    function stdDev(arr) {
+      if (!arr || arr.length < 2) return null;
+      const avg = mean(arr);
+      const variance = arr.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / (arr.length - 1);
+      return Math.sqrt(variance);
+    }
+
+    function round1(v) {
+      return v === null || Number.isNaN(v) ? null : Number(v.toFixed(1));
+    }
+
+    function computeHandMetrics(handType) {
+      const s1 = state.trials.filter(t => t.handType === handType && t.stage === 1);
+      const s2 = state.trials.filter(t => t.handType === handType && t.stage === 2);
+      const s2Correct = s2.filter(t => t.isCorrect === 1);
+
+      const s1Rt = mean(s1.map(t => t.rtMs));
+      const s2Rt = mean(s2Correct.map(t => t.rtMs));
+      const s2Acc = s2.length > 0 ? (s2Correct.length / s2.length) * 100 : null;
+      const deltaRt = (s2Rt !== null && s1Rt !== null) ? (s2Rt - s1Rt) : null;
+
+      // 반응 일관성 (2단계 전체 시행 표준편차 및 >= 1000ms 뇌정지 횟수)
+      const s2Sd = stdDev(s2.map(t => t.rtMs));
+      const freezeCnt = s2.filter(t => t.rtMs >= 1000).length;
+
+      // 스트룹 간섭 비용 (불일치 정답 평균 - 일치 정답 평균)
+      const congRt = mean(s2Correct.filter(t => t.condition === 'congruent').map(t => t.rtMs));
+      const incongRt = mean(s2Correct.filter(t => t.condition === 'incongruent').map(t => t.rtMs));
+      const stroopCost = (incongRt !== null && congRt !== null) ? (incongRt - congRt) : null;
+
+      // 손가락별 해상도 (검지·중지 vs 약지·새끼)
+      const imTrials = s2.filter(t => t.targetFinger === '검지' || t.targetFinger === '중지');
+      const rpTrials = s2.filter(t => t.targetFinger === '약지' || t.targetFinger === '새끼');
+
+      const imErrRate = imTrials.length > 0
+        ? (imTrials.filter(t => t.isCorrect === 0).length / imTrials.length) * 100
+        : null;
+      const rpErrRate = rpTrials.length > 0
+        ? (rpTrials.filter(t => t.isCorrect === 0).length / rpTrials.length) * 100
+        : null;
+
+      const imCorrectRt = mean(imTrials.filter(t => t.isCorrect === 1).map(t => t.rtMs));
+      const rpCorrectRt = mean(rpTrials.filter(t => t.isCorrect === 1).map(t => t.rtMs));
+
+      // 오류 후 지연 (PES: 오답 직후 시행 평균 RT - 정답 직후 시행 평균 RT, 1번 시행 제외)
+      const postErrTrials = s2.filter(t => t.trialNum > 1 && t.prevError === 1);
+      const postCorTrials = s2.filter(t => t.trialNum > 1 && t.prevError === 0);
+      const postErrRt = mean(postErrTrials.map(t => t.rtMs));
+      const postCorRt = mean(postCorTrials.map(t => t.rtMs));
+      const pes = (postErrRt !== null && postCorRt !== null) ? (postErrRt - postCorRt) : null;
+
+      return {
+        s1_rt: round1(s1Rt),
+        s2_rt: round1(s2Rt),
+        s2_acc: round1(s2Acc),
+        delta_rt: round1(deltaRt),
+        s2_sd: round1(s2Sd),
+        freeze_cnt: freezeCnt,
+        stroop_cost: round1(stroopCost),
+        im_err_rate: round1(imErrRate),
+        rp_err_rate: round1(rpErrRate),
+        im_rt: round1(imCorrectRt),
+        rp_rt: round1(rpCorrectRt),
+        pes: round1(pes),
+        error_count: s2.filter(t => t.isCorrect === 0).length
+      };
+    }
+
+    /* -----------------------------------------------------------
+       11. Screen 7: 결과 렌더링 + 구글 시트 전송 + CSV 내보내기
+    ----------------------------------------------------------- */
+    function openResultsScreen() {
+      const dom = computeHandMetrics('dominant');
+      const non = computeHandMetrics('nondominant');
+
+      const domHandKo = HAND_CONFIG[state.dominantHand].label;
+      const nonHandKo = HAND_CONFIG[state.dominantHand === 'right' ? 'left' : 'right'].label;
+      const firstHandKo = HAND_CONFIG[state.firstTestedHand].label;
+
+      document.getElementById('res-participant-name').textContent = state.participantId;
+      document.getElementById('res-meta-info').textContent =
+        `우세손: ${domHandKo} · 첫 측정 손: ${firstHandKo} · 모드: ${MODE_CONFIG[state.mode].label} · 총 ${state.trials.length}회 기록`;
+      document.getElementById('th-dom-hand').textContent = domHandKo;
+      document.getElementById('th-non-hand').textContent = nonHandKo;
+
+      // JSON 페이로드 구성 (지정된 정확한 스키마 준수)
+      const payload = {
+        timestamp: new Date().toISOString(),
+        participantId: state.participantId,
+        dominantHand: state.dominantHand,
+        firstTestedHand: state.firstTestedHand,
+        mode: state.mode,
+        summary: {
+          dom_s1_rt: dom.s1_rt,
+          non_s1_rt: non.s1_rt,
+          dom_s2_rt: dom.s2_rt,
+          non_s2_rt: non.s2_rt,
+          dom_s2_acc: dom.s2_acc,
+          non_s2_acc: non.s2_acc,
+          dom_delta_rt: dom.delta_rt,
+          non_delta_rt: non.delta_rt,
+          dom_s2_sd: dom.s2_sd,
+          non_s2_sd: non.s2_sd,
+          dom_freeze_cnt: dom.freeze_cnt,
+          non_freeze_cnt: non.freeze_cnt,
+          dom_stroop_cost: dom.stroop_cost,
+          non_stroop_cost: non.stroop_cost,
+          dom_im_err_rate: dom.im_err_rate,
+          dom_rp_err_rate: dom.rp_err_rate,
+          non_im_err_rate: non.im_err_rate,
+          non_rp_err_rate: non.rp_err_rate,
+          dom_pes: dom.pes,
+          non_pes: non.pes
+        },
+        trials: state.trials
+      };
+      state.lastPayload = payload;
+
+      // 핵심 해석 문구 생성
+      renderInsightBox(dom, non, domHandKo, nonHandKo);
+      // CSS 바 차트 렌더링
+      renderBarCharts(dom, non);
+      // 상세 비교 테이블 렌더링
+      renderComparisonTable(dom, non);
+
+      showScreen('screen-results');
+
+      // 구글 시트 자동 전송 시도
+      uploadToGoogleSheet(payload);
+    }
+
+    function fmtVal(val, unit = 'ms', emptyText = 'N/A') {
+      if (val === null || val === undefined) return emptyText;
+      return `${val}${unit ? ' ' + unit : ''}`;
+    }
+
+    function fmtDiff(nonVal, domVal, unit = 'ms') {
+      if (nonVal === null || domVal === null) return '-';
+      const diff = Number((nonVal - domVal).toFixed(1));
+      const sign = diff > 0 ? '+' : '';
+      return `${sign}${diff}${unit ? ' ' + unit : ''}`;
+    }
+
+    function renderInsightBox(dom, non, domHandKo, nonHandKo) {
+      const s1Diff = (non.s1_rt !== null && dom.s1_rt !== null) ? Number((non.s1_rt - dom.s1_rt).toFixed(1)) : 0;
+      const deltaDiff = (non.delta_rt !== null && dom.delta_rt !== null) ? Number((non.delta_rt - dom.delta_rt).toFixed(1)) : 0;
+
+      let summaryMsg = `<strong>핵심 분석 요약:</strong> 1단계 단순 반응에서 양손 차이는 <strong>${s1Diff >= 0 ? '+' : ''}${s1Diff} ms</strong>였으나, `;
+      summaryMsg += `인지·협응이 추가된 순수 뇌 처리 시간(ΔRT) 격차는 <strong>${deltaDiff >= 0 ? '+' : ''}${deltaDiff} ms</strong>로 나타났습니다. `;
+
+      if (non.rp_err_rate !== null && non.im_err_rate !== null && non.rp_err_rate > non.im_err_rate) {
+        summaryMsg += `또한 ${nonHandKo}(비우세손)에서 검지·중지 오답률(${non.im_err_rate}%)보다 <strong>약지·새끼 오답률(${non.rp_err_rate}%)이 더 높아</strong>, 운동 피질의 손가락 영역 분리(신경 해상도) 취약성이 관찰되었습니다.`;
+      } else {
+        summaryMsg += `${domHandKo}(우세손) 정확도는 <strong>${fmtVal(dom.s2_acc, '%')}</strong>, ${nonHandKo}(비우세손) 정확도는 <strong>${fmtVal(non.s2_acc, '%')}</strong>입니다.`;
+      }
+
+      document.getElementById('res-insight-box').innerHTML = summaryMsg;
+    }
+
+    function renderBarCharts(dom, non) {
+      // 차트 1: RT 및 ΔRT 비교
+      const maxRt = Math.max(dom.s1_rt || 0, non.s1_rt || 0, dom.s2_rt || 0, non.s2_rt || 0, dom.delta_rt || 0, non.delta_rt || 0, 500);
+      const rtItems = [
+        { label: '1단계 단순 반응', domV: dom.s1_rt, nonV: non.s1_rt },
+        { label: '2단계 화살표·스트룹', domV: dom.s2_rt, nonV: non.s2_rt },
+        { label: '순수 뇌 처리 (ΔRT)', domV: dom.delta_rt, nonV: non.delta_rt },
+      ];
+
+      document.getElementById('chart-rt-bars').innerHTML = rtItems.map(item => {
+        const domW = item.domV !== null ? Math.min(100, Math.max(4, (item.domV / maxRt) * 100)) : 0;
+        const nonW = item.nonV !== null ? Math.min(100, Math.max(4, (item.nonV / maxRt) * 100)) : 0;
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+              <span>${item.label}</span>
+              <span class="text-slate-400">우세 vs 비우세</span>
+            </div>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-10 text-[11px] font-bold text-indigo-700">우세</span>
+                <div class="flex-1 h-4 bg-slate-200/80 rounded-full overflow-hidden">
+                  <div class="bar-fill h-full bg-indigo-600 rounded-full" style="width: ${domW}%"></div>
+                </div>
+                <span class="w-16 text-right text-xs font-bold text-slate-700 tabular-nums">${fmtVal(item.domV, 'ms')}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-10 text-[11px] font-bold text-rose-700">비우세</span>
+                <div class="flex-1 h-4 bg-slate-200/80 rounded-full overflow-hidden">
+                  <div class="bar-fill h-full bg-rose-500 rounded-full" style="width: ${nonW}%"></div>
+                </div>
+                <span class="w-16 text-right text-xs font-bold text-slate-700 tabular-nums">${fmtVal(item.nonV, 'ms')}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 차트 2: 손가락 그룹별 오답률 (%)
+      const fingerItems = [
+        { label: '우세손 · 검지/중지 오답률', val: dom.im_err_rate, color: 'bg-indigo-400', text: 'text-indigo-700' },
+        { label: '우세손 · 약지/새끼 오답률', val: dom.rp_err_rate, color: 'bg-indigo-600', text: 'text-indigo-800' },
+        { label: '비우세손 · 검지/중지 오답률', val: non.im_err_rate, color: 'bg-rose-400', text: 'text-rose-700' },
+        { label: '비우세손 · 약지/새끼 오답률', val: non.rp_err_rate, color: 'bg-rose-600', text: 'text-rose-800' },
+      ];
+
+      document.getElementById('chart-finger-bars').innerHTML = fingerItems.map(item => {
+        const w = item.val !== null ? Math.min(100, Math.max(item.val > 0 ? 4 : 0, item.val)) : 0;
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="${item.text}">${item.label}</span>
+              <span class="text-slate-700 tabular-nums">${fmtVal(item.val, '%')}</span>
+            </div>
+            <div class="w-full h-3.5 bg-slate-200/80 rounded-full overflow-hidden">
+              <div class="bar-fill h-full ${item.color} rounded-full" style="width: ${w}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderComparisonTable(dom, non) {
+      const rows = [
+        {
+          name: '1. 1단계 단순 반응 평균',
+          sub: '기본 신경전달 속도',
+          d: fmtVal(dom.s1_rt, 'ms'),
+          n: fmtVal(non.s1_rt, 'ms'),
+          diff: fmtDiff(non.s1_rt, dom.s1_rt, 'ms')
+        },
+        {
+          name: '2. 2단계 화살표·스트룹 평균 (정확도)',
+          sub: '정답 시행 반응속도 & 전체 정답률',
+          d: `${fmtVal(dom.s2_rt, 'ms')} <span class="text-xs text-slate-500">(${fmtVal(dom.s2_acc, '%')})</span>`,
+          n: `${fmtVal(non.s2_rt, 'ms')} <span class="text-xs text-slate-500">(${fmtVal(non.s2_acc, '%')})</span>`,
+          diff: fmtDiff(non.s2_rt, dom.s2_rt, 'ms')
+        },
+        {
+          name: '3. 순수 뇌 처리 시간 (ΔRT)',
+          sub: '돈더스의 감산법 (2단계 - 1단계)',
+          d: `<strong>${fmtVal(dom.delta_rt, 'ms')}</strong>`,
+          n: `<strong>${fmtVal(non.delta_rt, 'ms')}</strong>`,
+          diff: `<strong>${fmtDiff(non.delta_rt, dom.delta_rt, 'ms')}</strong>`,
+          highlight: true
+        },
+        {
+          name: '4. 스트룹 간섭 비용',
+          sub: '불일치(빨강) 정답 RT - 일치(파랑) 정답 RT',
+          d: fmtVal(dom.stroop_cost, 'ms'),
+          n: fmtVal(non.stroop_cost, 'ms'),
+          diff: fmtDiff(non.stroop_cost, dom.stroop_cost, 'ms')
+        },
+        {
+          name: '5. 반응 일관성 (표준편차 · 뇌정지)',
+          sub: '2단계 SD 및 1,000ms 이상 지연 횟수',
+          d: `${fmtVal(dom.s2_sd, 'ms')} <span class="text-xs text-slate-500">/ ${dom.freeze_cnt}회</span>`,
+          n: `${fmtVal(non.s2_sd, 'ms')} <span class="text-xs text-slate-500">/ ${non.freeze_cnt}회</span>`,
+          diff: fmtDiff(non.s2_sd, dom.s2_sd, 'ms')
+        },
+        {
+          name: '6-A. 검지·중지 오답률 (평균 RT)',
+          sub: '독립 제어 효율이 높은 손가락 그룹',
+          d: `${fmtVal(dom.im_err_rate, '%')} <span class="text-xs text-slate-500">(${fmtVal(dom.im_rt, 'ms')})</span>`,
+          n: `${fmtVal(non.im_err_rate, '%')} <span class="text-xs text-slate-500">(${fmtVal(non.im_rt, 'ms')})</span>`,
+          diff: fmtDiff(non.im_err_rate, dom.im_err_rate, '%p')
+        },
+        {
+          name: '6-B. 약지·새끼 오답률 (평균 RT)',
+          sub: '신경 간섭(Enslaving)에 취약한 손가락 그룹',
+          d: `${fmtVal(dom.rp_err_rate, '%')} <span class="text-xs text-slate-500">(${fmtVal(dom.rp_rt, 'ms')})</span>`,
+          n: `${fmtVal(non.rp_err_rate, '%')} <span class="text-xs text-slate-500">(${fmtVal(non.rp_rt, 'ms')})</span>`,
+          diff: fmtDiff(non.rp_err_rate, dom.rp_err_rate, '%p')
+        },
+        {
+          name: '7. 오류 후 지연 (PES)',
+          sub: '오답 직후 시행 RT - 정답 직후 시행 RT',
+          d: fmtVal(dom.pes, 'ms', '오류 없음'),
+          n: fmtVal(non.pes, 'ms', '오류 없음'),
+          diff: fmtDiff(non.pes, dom.pes, 'ms')
+        }
+      ];
+
+      document.getElementById('res-table-body').innerHTML = rows.map(r => `
+        <tr class="${r.highlight ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'} transition">
+          <td class="py-3.5 px-4">
+            <div class="font-bold text-slate-800">${r.name}</div>
+            <div class="text-xs text-slate-500">${r.sub}</div>
+          </td>
+          <td class="py-3.5 px-4 text-center tabular-nums">${r.d}</td>
+          <td class="py-3.5 px-4 text-center tabular-nums">${r.n}</td>
+          <td class="py-3.5 px-4 text-center font-semibold text-slate-700 tabular-nums">${r.diff}</td>
+        </tr>
+      `).join('');
+    }
+
+    /* 구글 시트 Apps Script 연동 */
+    async function uploadToGoogleSheet(payload) {
+      const banner = document.getElementById('upload-banner');
+      const dot = document.getElementById('upload-status-dot');
+      const txt = document.getElementById('upload-status-text');
+
+      if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.trim()) {
+        banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50 border-amber-200';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
+        txt.textContent = 'GOOGLE_SCRIPT_URL이 비어 있어 로컬 모드로 실행되었습니다. 아래 CSV 다운로드 버튼으로 데이터를 저장할 수 있습니다.';
+        return;
+      }
+
+      banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50 border-indigo-200';
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse shrink-0';
+      txt.textContent = '구글 시트로 실험 데이터를 전송하는 중...';
+
+      try {
+        await fetch(GOOGLE_SCRIPT_URL.trim(), {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50 border-emerald-200';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0';
+        txt.textContent = '구글 시트 전송 요청이 완료되었습니다! (스프레드시트에 데이터가 기록되었는지 확인해 주세요)';
+      } catch (err) {
+        console.error('Google Sheet Upload Error:', err);
+        banner.className = 'mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-50 border-red-200';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shrink-0';
+        txt.textContent = '구글 시트 전송 중 네트워크 오류가 발생했습니다. 다시 시도하거나 CSV로 백업해 주세요.';
+      }
+    }
+
+    document.getElementById('btn-retry-upload').addEventListener('click', () => {
+      if (state.lastPayload) {
+        uploadToGoogleSheet(state.lastPayload);
+      }
+    });
+
+    /* 전체 시행 로그 UTF-8 BOM CSV 다운로드 */
+    document.getElementById('btn-download-csv').addEventListener('click', () => {
+      if (!state.trials || state.trials.length === 0) return;
+
+      const headers = [
+        'participantId', 'dominantHand', 'testedHand', 'handType',
+        'stage', 'trialNum', 'condition', 'stimulusArrow',
+        'targetFinger', 'pressedFinger', 'isCorrect', 'rtMs', 'prevError'
+      ];
+
+      const escapeCsv = (val) => {
+        const str = val === null || val === undefined ? '' : String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      const csvRows = [
+        headers.join(','),
+        ...state.trials.map(row => headers.map(h => escapeCsv(row[h])).join(','))
+      ];
+
+      // 엑셀 한글 깨짐 방지를 위한 UTF-8 BOM(\uFEFF) 추가
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const safeId = state.participantId.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neuro_hand_experiment_${safeId}_${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    /* 새 참가자 측정하기 초기화 */
+    document.getElementById('btn-reset-experiment').addEventListener('click', () => {
+      resetState();
+      document.getElementById('input-participant-id').value = '';
+      showScreen('screen-start');
+    });
+
+    /* 초기 상태 세팅 */
+    resetState();
+  </script>
+</body>
+</html>
